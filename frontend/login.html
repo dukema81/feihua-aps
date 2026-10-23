@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>登录 · 飞划APS管理系统</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="login-body">
+  <div class="login-card">
+    <div class="login-logo">⚡</div>
+    <h1>飞划APS管理系统</h1>
+    <p class="login-sub">高级计划与排程 · 有限产能 · 交期承诺</p>
+    <input id="username" placeholder="用户名" autocomplete="username" />
+    <input id="password" type="password" placeholder="密码" autocomplete="current-password" />
+    <button id="btn-login">登 录</button>
+    <div id="login-err" class="login-err"></div>
+    <div class="login-tip">admin / aps@2026</div>
+  </div>
+  <script>
+    document.getElementById('btn-login').onclick = doLogin;
+    document.getElementById('password').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') doLogin();
+    });
+    function doLogin() {
+      var u = document.getElementById('username').value.trim();
+      var p = document.getElementById('password').value;
+      fetch('/api/auth/login', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: u, password: p })
+      }).then(function (r) { return r.json(); }).then(function (j) {
+        if (j.code !== 200) { document.getElementById('login-err').textContent = j.message; return; }
+        localStorage.setItem('aps_token', j.data.token);
+        localStorage.setItem('aps_user', JSON.stringify(j.data));
+        location.href = 'index.html';
+      }).catch(function (e) { document.getElementById('login-err').textContent = '网络错误'; });
+    }
+    if (localStorage.getItem('aps_token')) location.href = 'index.html';
+  </script>
+</body>
+</html>
