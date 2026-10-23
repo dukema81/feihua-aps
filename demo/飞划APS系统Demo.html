@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>飞划APS管理系统 · 离线DEMO</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='26'%3E%E2%9A%A1%3C/text%3E%3C/svg%3E" />
+<style>
+:root {
+  --bg: #f4f6fa; --card: #fff; --line: #e4e8f0;
+  --pri: #2456e0; --pri-d: #1c46b8; --ok: #18a058; --warn: #d98b00; --err: #d03050;
+  --txt: #1f2733; --sub: #7a8699; --side: #101b30;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font: 14px/1.6 "PingFang SC","Microsoft YaHei",sans-serif; background: var(--bg); color: var(--txt); }
+#app { display: flex; min-height: 100vh; }
+#sidebar { width: 210px; background: var(--side); color: #cdd6e6; display: flex; flex-direction: column; position: fixed; top:0; bottom:0; left:0; z-index: 10;}
+.brand { font-size: 19px; font-weight: 700; color: #fff; padding: 18px 20px 2px; }
+.brand-sub { font-size: 11px; color: #7d8db0; padding: 0 20px 14px; border-bottom: 1px solid #1e2c48; }
+#nav { flex: 1; padding: 10px 0; overflow-y: auto; }
+#nav a { display: block; padding: 10px 20px; color: #cdd6e6; text-decoration: none; font-size: 13.5px; border-left: 3px solid transparent; }
+#nav a:hover { background: #182644; color: #fff; }
+#nav a.on { background: #182644; color: #fff; border-left-color: var(--pri); }
+.side-foot { padding: 14px 20px; font-size: 12px; color: #7d8db0; border-top: 1px solid #1e2c48; display:flex; justify-content: space-between; align-items:center;}
+#main { flex: 1; margin-left: 210px; padding: 20px 24px; }
+h2.page { font-size: 18px; margin-bottom: 14px; }
+.toolbar { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; align-items: center; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 16px; margin-bottom: 14px; }
+.card h3 { font-size: 14px; margin-bottom: 10px; color: var(--sub); font-weight: 600;}
+table { width: 100%; border-collapse: collapse; background: #fff; }
+.table-wrap { width: 100%; overflow-x: auto; }
+th, td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; font-size: 13px; white-space: nowrap;}
+th { color: var(--sub); font-weight: 600; background: #f8fafd; }
+tr:hover td { background: #f6f9ff; }
+.btn { display:inline-block; background: var(--pri); color:#fff; border:none; padding:7px 14px; border-radius:6px; cursor:pointer; font-size:13px; }
+.btn:hover { background: var(--pri-d); }
+.btn.ghost { background:#fff; color:var(--txt); border:1px solid var(--line); }
+.btn.sm { padding: 4px 10px; font-size: 12px; }
+.btn.danger { background: var(--err); }
+.btn:disabled { opacity:.5; cursor:not-allowed; }
+input, select, textarea { padding: 7px 10px; border: 1px solid var(--line); border-radius: 6px; font-size: 13px; outline: none; background:#fff;}
+input:focus, select:focus { border-color: var(--pri); }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 14px; }
+.kpi { background:#fff; border:1px solid var(--line); border-radius:8px; padding:14px 16px; }
+.kpi .v { font-size: 22px; font-weight: 700; }
+.kpi .t { font-size: 12px; color: var(--sub); }
+.tag { display:inline-block; padding:1px 8px; border-radius: 10px; font-size: 12px; }
+.tag.ok { background:#e8f7ef; color: var(--ok); }
+.tag.warn { background:#fdf3e0; color: var(--warn); }
+.tag.err { background:#fdebee; color: var(--err); }
+.tag.info { background:#e8effd; color: var(--pri); }
+.bar { height: 10px; background:#eef1f7; border-radius: 5px; overflow:hidden; min-width: 100px;}
+.bar > i { display:block; height:100%; background: var(--pri); }
+.bar > i.over { background: var(--err); }
+.bar > i.warn { background: var(--warn); }
+.hidden { display: none !important; }
+.modal-mask { position: fixed; inset: 0; background: rgba(10,18,35,.45); z-index: 50; display:flex; align-items:center; justify-content:center;}
+.modal { background:#fff; border-radius: 10px; padding: 20px; width: min(680px, 92vw); max-height: 86vh; overflow:auto; }
+.modal h3 { margin-bottom: 12px; }
+.modal .frow { display:flex; gap:10px; margin-bottom:10px; }
+.modal .frow label { width: 96px; text-align:right; color:var(--sub); padding-top:7px; font-size:13px; flex-shrink:0;}
+.modal .frow input, .modal .frow select { flex:1; }
+.toast { position: fixed; top: 18px; left: 50%; transform: translateX(-50%); background:#1f2733; color:#fff; padding: 9px 20px; border-radius: 8px; z-index: 99; font-size: 13px;}
+.empty { color: var(--sub); text-align:center; padding: 60px 0; }
+/* gantt */
+.gantt { overflow-x: auto; }
+.g-row { display:flex; align-items:center; height: 30px; margin-bottom:2px; }
+.g-label { width: 130px; flex-shrink:0; font-size:12px; color:var(--sub); }
+.g-track { position:relative; flex:1; height: 24px; background: repeating-linear-gradient(90deg, #f0f3f9 0 1px, transparent 1px calc(100%/90)); background-color:#fafbfe; border-radius:4px; }
+.g-bar { position:absolute; top:3px; height:18px; border-radius:4px; background: var(--pri); color:#fff; font-size:11px; line-height:18px; padding:0 6px; overflow:hidden; white-space:nowrap; cursor:default;}
+.g-bar.late { background: var(--err); }
+.g-bar.ok2 { background: var(--ok); }
+/* login */
+.login-body { display:flex; align-items:center; justify-content:center; min-height:100vh; background: linear-gradient(135deg,#101b30 0%, #1d3a6e 100%); }
+.login-card { background:#fff; border-radius: 12px; padding: 36px 40px; width: 360px; text-align:center; }
+.login-logo { font-size: 40px; }
+.login-card h1 { font-size: 20px; margin: 6px 0 2px; }
+.login-sub { color: var(--sub); font-size: 12px; margin-bottom: 22px; }
+.login-card input { width: 100%; margin-bottom: 12px; padding: 10px 12px; }
+.login-card button { width: 100%; padding: 10px; font-size: 15px; }
+.login-err { color: var(--err); font-size: 12px; min-height: 18px; margin-top: 6px;}
+.login-tip { color: var(--sub); font-size: 12px; margin-top: 8px; }
+@media (max-width: 760px) {
+  html, body { overflow-x: hidden; }
+  #main { overflow-x: auto; }
+  #sidebar { width: 56px; }
+  .brand, .brand-sub { display: none; }
+  #nav a { padding: 12px 0; text-align: center; font-size: 11px; }
+  #main { margin-left: 56px; padding: 12px; }
+  .side-foot { flex-direction: column; gap: 6px; }
+}
+
+.demo-tip { position:fixed; right:18px; bottom:18px; z-index:99; background:#1f2733; color:#fff;
+  padding:10px 14px; border-radius:10px; font-size:12.5px; box-shadow:0 6px 20px rgba(0,0,0,.2);
+  max-width:280px; line-height:1.6; }
+.demo-tip b { color:#ffd666; }
+</style>
+</head>
+<body>
+<div id="sidebar">
+  <div class="brand">⚡ 飞划APS</div>
+  <div class="brand-sub">高级计划与排程</div>
+  <nav id="nav"></nav>
+  <div class="side-foot">
+    <span id="who"></span>
+    <button id="btn-logout" class="btn ghost sm">退出</button>
+  </div>
+</div>
+<main id="main"><div class="empty">加载中…</div></main>
+<div id="modal-mask" class="modal-mask hidden"><div id="modal" class="modal"></div></div>
+<div id="toast" class="toast hidden"></div>
+<div class="demo-tip"><b>离线 DEMO</b><br/>数据为真实排程结果快照，交互可点，写操作已禁用。</div>
+<script>
+
+/* ============ 离线 DEMO 运行时 ============ */
+var MOCK = {"/api/health": {"brand": "飞划APS管理系统", "version": "1.0.0", "routes": 56, "workcenters": 6, "materials": 12, "products": 8, "sales_orders": 10, "work_orders": 10, "time": "2026-10-23 09:22:02"}, "/api/auth/me": {"username": "admin", "name": "系统管理员", "role": "admin", "roleLabel": "系统管理员", "perms": ["*"]}, "/api/alerts": [{"id": 16, "no": "AL0016", "atype": "MAT_SHORT", "level": "high", "target": "M-MOTOR", "message": "物料 M-MOTOR 缺口 5.0，阻塞 1 个工单", "value": 5.0, "threshold": 0.0, "status": "未处理", "period": "2026-10-23", "created_at": "2026-10-23 09:22:02"}, {"id": 15, "no": "AL0015", "atype": "MAT_SHORT", "level": "high", "target": "M-STEEL", "message": "物料 M-STEEL 缺口 23.0，阻塞 1 个工单", "value": 23.0, "threshold": 0.0, "status": "未处理", "period": "2026-10-23", "created_at": "2026-10-23 09:22:02"}, {"id": 14, "no": "AL0014", "atype": "ORDER_NEAR", "level": "mid", "target": "WO0103", "message": "工单 WO0103 距交期缓冲仅 0 天", "value": 0.0, "threshold": 3.0, "status": "未处理", "period": "2026-10-23", "created_at": "2026-10-23 09:22:02"}, {"id": 13, "no": "AL0013", "atype": "ORDER_LATE", "level": "high", "target": "WO0101", "message": "工单 WO0101 预计 2026-11-06 完工，迟于交期 2 天", "value": 2.0, "threshold": 0.0, "status": "未处理", "period": "2026-10-23", "created_at": "2026-10-23 09:22:02"}, {"id": 12, "no": "AL0012", "atype": "ORDER_LATE", "level": "high", "target": "WO0102", "message": "工单 WO0102 预计 2026-11-03 完工，迟于交期 1 天", "value": 1.0, "threshold": 0.0, "status": "未处理", "period": "2026-10-23", "created_at": "2026-10-23 09:22:02"}, {"id": 11, "no": "AL0011", "atype": "ORDER_NEAR", "level": "mid", "target": "WO0106", "message": "工单 WO0106 距交期缓冲仅 2 天", "value": 2.0, "threshold": 3.0, "status": "未处理", "period": "2026-10-23", "created_at": "2026-10-23 09:22:02"}, {"id": 10, "no": "AL0010", "atype": "ORDER_NEAR", "level": "mid", "target": "WO0104", "message": "工单 WO0104 距交期缓冲仅 2 天", "value": 2.0, "threshold": 3.0, "status": "未处理", "period": "2026-10-23", "created_at": "2026-10-23 09:22:02"}, {"id": 9, "no": "AL0009", "atype": "ORDER_NEAR", "level": "mid", "target": "WO0108", "message": "工单 WO0108 距交期缓冲仅 1 天", "value": 1.0, "threshold": 3.0, "status": "未处理", "period": "2026-10-23", "created_at": "2026-10-23 09:22:02"}, {"id": 8, "no": "AL0008", "atype": "MAT_SHORT", "level": "high", "target": "M-MOTOR", "message": "物料 M-MOTOR 缺口 5.0，阻塞 1 个工单", "value": 5.0, "threshold": 0.0, "status": "未处理", "period": "2026-10-23", "created_at": "2026-10-23 09:22:02"}, {"id": 7, "no": "AL0007", "atype": "MAT_SHORT", "level": "high", "target": "M-STEEL", "message": "物料 M-STEEL 缺口 23.0，阻塞 1 个工单", "value": 23.0, "threshold": 0.0, "status": "未处理", "period": "2026-10-23", "created_at": "2026-10-23 09:22:02"}, {"id": 6, "no": "AL0006", "atype": "ORDER_NEAR", "level": "mid", "target": "WO0103", "message": "工单 WO0103 距交期缓冲仅 0 天", "value": 0.0, "threshold": 3.0, "status": "未处理", "period": "2026-10-23", "created_at": "2026-10-23 09:22:02"}, {"id": 5, "no": "AL0005", "atype": "ORDER_LATE", "level": "high", "target": "WO0101", "message": "工单 WO0101 预计 2026-11-06 完工，迟于交期 2 天", "value": 2.0, "threshold": 0.0, "status": "未处理", "period": "2026-10-23", "created_at": "2026-10-23 09:22:02"}, {"id": 4, "no": "AL0004", "atype": "ORDER_LATE", "level": "high", "target": "WO0102", "message": "工单 WO0102 预计 2026-11-03 完工，迟于交期 1 天", "value": 1.0, "threshold": 0.0, "status": "未处理", "period": "2026-10-23", "created_at": "2026-10-23 09:22:02"}, {"id": 3, "no": "AL0003", "atype": "ORDER_NEAR", "level": "mid", "target": "WO0106", "message": "工单 WO0106 距交期缓冲仅 2 天", "value": 2.0, "threshold": 3.0, "status": "未处理", "period": "2026-10-23", "created_at": "2026-10-23 09:22:02"}, {"id": 2, "no": "AL0002", "atype": "ORDER_NEAR", "level": "mid", "target": "WO0104", "message": "工单 WO0104 距交期缓冲仅 2 天", "value": 2.0, "threshold": 3.0, "status": "未处理", "period": "2026-10-23", "created_at": "2026-10-23 09:22:02"}, {"id": 1, "no": "AL0001", "atype": "ORDER_NEAR", "level": "mid", "target": "WO0108", "message": "工单 WO0108 距交期缓冲仅 1 天", "value": 1.0, "threshold": 3.0, "status": "未处理", "period": "2026-10-23", "created_at": "2026-10-23 09:22:02"}], "/api/plan/latest": {"run": {"run_no": "RUN0002", "rule": "EDD", "start_date": "2026-10-23", "horizon_days": 90, "wo_count": 10, "late_count": 2, "bottleneck_wc": "WC-ASSY", "run_by": "admin", "run_at": "2026-10-23 09:22:02"}, "ops": [{"id": 48, "run_id": 2, "wo": "WO0101", "seq": 10, "wc": "WC-CNC1", "hours": 16.0, "start_date": "2026-10-26", "start_h": 17.0, "end_date": "2026-10-27", "end_h": 17.0}, {"id": 49, "run_id": 2, "wo": "WO0101", "seq": 20, "wc": "WC-WELD", "hours": 13.0, "start_date": "2026-10-27", "start_h": 8.0, "end_date": "2026-10-28", "end_h": 13.4}, {"id": 50, "run_id": 2, "wo": "WO0101", "seq": 30, "wc": "WC-PAINT", "hours": 6.0, "start_date": "2026-10-29", "start_h": 8.0, "end_date": "2026-10-29", "end_h": 14.0}, {"id": 51, "run_id": 2, "wo": "WO0101", "seq": 40, "wc": "WC-ASSY", "hours": 22.0, "start_date": "2026-11-03", "start_h": 11.0, "end_date": "2026-11-06", "end_h": 9.0}, {"id": 52, "run_id": 2, "wo": "WO0101", "seq": 50, "wc": "WC-QC", "hours": 3.0, "start_date": "2026-11-06", "start_h": 8.0, "end_date": "2026-11-06", "end_h": 11.0}, {"id": 45, "run_id": 2, "wo": "WO0102", "seq": 10, "wc": "WC-CNC2", "hours": 15.0, "start_date": "2026-10-28", "start_h": 13.0, "end_date": "2026-11-02", "end_h": 10.0}, {"id": 46, "run_id": 2, "wo": "WO0102", "seq": 20, "wc": "WC-ASSY", "hours": 11.0, "start_date": "2026-11-02", "start_h": 8.0, "end_date": "2026-11-03", "end_h": 11.0}, {"id": 47, "run_id": 2, "wo": "WO0102", "seq": 30, "wc": "WC-QC", "hours": 3.4, "start_date": "2026-11-03", "start_h": 8.0, "end_date": "2026-11-03", "end_h": 11.4}, {"id": 57, "run_id": 2, "wo": "WO0103", "seq": 10, "wc": "WC-CNC1", "hours": 17.0, "start_date": "2026-10-30", "start_h": 9.5, "end_date": "2026-11-02", "end_h": 10.5}, {"id": 58, "run_id": 2, "wo": "WO0103", "seq": 20, "wc": "WC-WELD", "hours": 13.0, "start_date": "2026-11-02", "start_h": 11.8, "end_date": "2026-11-04", "end_h": 9.6}, {"id": 59, "run_id": 2, "wo": "WO0103", "seq": 30, "wc": "WC-CNC2", "hours": 6.5, "start_date": "2026-11-05", "start_h": 8.0, "end_date": "2026-11-06", "end_h": 8.5}, {"id": 60, "run_id": 2, "wo": "WO0103", "seq": 40, "wc": "WC-ASSY", "hours": 23.0, "start_date": "2026-11-06", "start_h": 9.0, "end_date": "2026-11-10", "end_h": 16.0}, {"id": 61, "run_id": 2, "wo": "WO0103", "seq": 50, "wc": "WC-QC", "hours": 4.4, "start_date": "2026-11-10", "start_h": 8.0, "end_date": "2026-11-10", "end_h": 12.4}, {"id": 40, "run_id": 2, "wo": "WO0104", "seq": 10, "wc": "WC-CNC2", "hours": 14.0, "start_date": "2026-10-26", "start_h": 11.0, "end_date": "2026-10-28", "end_h": 13.0}, {"id": 41, "run_id": 2, "wo": "WO0104", "seq": 20, "wc": "WC-ASSY", "hours": 9.0, "start_date": "2026-10-28", "start_h": 14.0, "end_date": "2026-10-29", "end_h": 15.0}, {"id": 42, "run_id": 2, "wo": "WO0104", "seq": 30, "wc": "WC-QC", "hours": 3.5, "start_date": "2026-10-29", "start_h": 8.0, "end_date": "2026-10-29", "end_h": 11.5}, {"id": 55, "run_id": 2, "wo": "WO0105", "seq": 10, "wc": "WC-CNC1", "hours": 25.0, "start_date": "2026-10-28", "start_h": 16.5, "end_date": "2026-10-30", "end_h": 9.5}, {"id": 56, "run_id": 2, "wo": "WO0105", "seq": 20, "wc": "WC-WELD", "hours": 19.0, "start_date": "2026-10-30", "start_h": 8.0, "end_date": "2026-11-02", "end_h": 11.8}, {"id": 43, "run_id": 2, "wo": "WO0106", "seq": 10, "wc": "WC-CNC1", "hours": 15.0, "start_date": "2026-10-23", "start_h": 18.0, "end_date": "2026-10-26", "end_h": 17.0}, {"id": 44, "run_id": 2, "wo": "WO0106", "seq": 20, "wc": "WC-ASSY", "hours": 10.5, "start_date": "2026-10-26", "start_h": 14.5, "end_date": "2026-10-30", "end_h": 16.0}, {"id": 37, "run_id": 2, "wo": "WO0107", "seq": 10, "wc": "WC-CNC2", "hours": 9.0, "start_date": "2026-10-23", "start_h": 8.0, "end_date": "2026-10-26", "end_h": 11.0}, {"id": 38, "run_id": 2, "wo": "WO0107", "seq": 20, "wc": "WC-ASSY", "hours": 6.5, "start_date": "2026-10-26", "start_h": 8.0, "end_date": "2026-10-26", "end_h": 14.5}, {"id": 39, "run_id": 2, "wo": "WO0107", "seq": 30, "wc": "WC-QC", "hours": 2.2, "start_date": "2026-10-26", "start_h": 8.0, "end_date": "2026-10-26", "end_h": 10.2}, {"id": 32, "run_id": 2, "wo": "WO0108", "seq": 10, "wc": "WC-CNC1", "hours": 10.0, "start_date": "2026-10-23", "start_h": 8.0, "end_date": "2026-10-23", "end_h": 18.0}, {"id": 33, "run_id": 2, "wo": "WO0108", "seq": 20, "wc": "WC-WELD", "hours": 8.0, "start_date": "2026-10-23", "start_h": 8.0, "end_date": "2026-10-24", "end_h": 8.4}, {"id": 34, "run_id": 2, "wo": "WO0108", "seq": 30, "wc": "WC-PAINT", "hours": 4.0, "start_date": "2026-10-26", "start_h": 8.0, "end_date": "2026-10-26", "end_h": 12.0}, {"id": 35, "run_id": 2, "wo": "WO0108", "seq": 40, "wc": "WC-ASSY", "hours": 14.0, "start_date": "2026-10-27", "start_h": 8.0, "end_date": "2026-10-28", "end_h": 14.0}, {"id": 36, "run_id": 2, "wo": "WO0108", "seq": 50, "wc": "WC-QC", "hours": 2.0, "start_date": "2026-10-28", "start_h": 8.0, "end_date": "2026-10-28", "end_h": 10.0}, {"id": 53, "run_id": 2, "wo": "WO0109", "seq": 10, "wc": "WC-CNC1", "hours": 15.5, "start_date": "2026-10-27", "start_h": 17.0, "end_date": "2026-10-28", "end_h": 16.5}, {"id": 54, "run_id": 2, "wo": "WO0109", "seq": 20, "wc": "WC-PAINT", "hours": 10.5, "start_date": "2026-10-28", "start_h": 8.0, "end_date": "2026-10-30", "end_h": 10.1}, {"id": 62, "run_id": 2, "wo": "WO0110", "seq": 10, "wc": "WC-CNC1", "hours": 16.3, "start_date": "2026-11-02", "start_h": 10.5, "end_date": "2026-11-03", "end_h": 10.8}], "loads": [{"wc": "WC-ASSY", "name": "总装线", "capacity_h": 512.0, "load_h": 96.0, "utilization": 0.1875, "free_h": 416.0, "rank": 1, "level": "ok"}, {"wc": "WC-CNC2", "name": "CNC 车间二号", "capacity_h": 384.0, "load_h": 44.5, "utilization": 0.1159, "free_h": 339.5, "rank": 2}, {"wc": "WC-CNC1", "name": "CNC 车间一号", "capacity_h": 1024.0, "load_h": 114.8, "utilization": 0.1121, "free_h": 909.2, "rank": 3}, {"wc": "WC-WELD", "name": "焊接工段", "capacity_h": 585.2, "load_h": 53.0, "utilization": 0.0906, "free_h": 532.2, "rank": 4}, {"wc": "WC-PAINT", "name": "喷涂线", "capacity_h": 460.8, "load_h": 20.5, "utilization": 0.0445, "free_h": 440.3, "rank": 5}, {"wc": "WC-QC", "name": "检验站", "capacity_h": 512.0, "load_h": 18.5, "utilization": 0.0361, "free_h": 493.5, "rank": 6}], "kit": [{"wo": "WO0108", "product": "P-CONV", "kit_ok": true, "shortage": [], "need": {"M-STEEL": 8.0, "M-BEAR": 16.0, "M-MOTOR": 4.0, "M-SCREW": 4.0, "M-PKG": 2.0}}, {"wo": "WO0107", "product": "P-MIXER", "kit_ok": true, "shortage": [], "need": {"M-BLANK": 3.0, "M-MOTOR": 3.0, "M-SEAL": 6.0, "M-SCREW": 3.0, "M-PKG": 3.0}}, {"wo": "WO0104", "product": "P-FAN", "kit_ok": true, "shortage": [], "need": {"M-BLANK": 10.0, "M-BEAR": 20.0, "M-MOTOR": 10.0, "M-SCREW": 10.0}}, {"wo": "WO0106", "product": "P-TROLLEY", "kit_ok": true, "shortage": [], "need": {"M-STEEL": 20.0, "M-GEAR": 20.0, "M-SCREW": 20.0}}, {"wo": "WO0102", "product": "P-MIXER", "kit_ok": true, "shortage": [], "need": {"M-BLANK": 6.0, "M-MOTOR": 6.0, "M-SEAL": 12.0, "M-SCREW": 6.0, "M-PKG": 6.0}}, {"wo": "WO0101", "product": "P-CONV", "kit_ok": false, "shortage": [{"material": "M-MOTOR", "need": 8.0, "stock": 3.0, "gap": 5.0}], "need": {"M-STEEL": 16.0, "M-BEAR": 32.0, "M-MOTOR": 8.0, "M-SCREW": 8.0, "M-PKG": 4.0}}, {"wo": "WO0109", "product": "P-GUARD", "kit_ok": true, "shortage": [], "need": {"M-STEEL": 25.0, "M-PAINT": 5.0}}, {"wo": "WO0105", "product": "P-RACK", "kit_ok": false, "shortage": [{"material": "M-STEEL", "need": 90.0, "stock": 67.0, "gap": 23.0}], "need": {"M-STEEL": 90.0, "M-SCREW": 30.0}}, {"wo": "WO0103", "product": "P-LIFTER", "kit_ok": true, "shortage": [], "need": {"M-STEEL": 18.0, "M-SEAL": 12.0, "M-PLCX": 3.0, "M-SCREW": 6.0, "M-PKG": 3.0}}, {"wo": "WO0110", "product": "P-BRACKET", "kit_ok": true, "shortage": [], "need": {"M-STEEL": 16.0}}], "shortage": {"M-BLANK": 21.0, "M-STEEL": 33.0, "M-BEAR": 54.0, "M-MOTOR": 3.0, "M-PLCX": 19.0, "M-WIRE": 60.0, "M-PAINT": 25.0, "M-SCREW": 151.0, "M-SEAL": 25.0, "M-GEAR": 10.0, "M-SENSOR": 80.0, "M-PKG": 11.0}}, "/api/plan/overview": {"run": {"run_no": "RUN0002", "rule": "EDD", "start_date": "2026-10-23", "horizon_days": 90, "wo_count": 10, "late_count": 2, "bottleneck_wc": "WC-ASSY", "run_by": "admin", "run_at": "2026-10-23 09:22:02"}, "loads": [{"wc": "WC-ASSY", "name": "总装线", "capacity_h": 512.0, "load_h": 96.0, "utilization": 0.1875, "free_h": 416.0, "rank": 1, "level": "ok"}, {"wc": "WC-CNC2", "name": "CNC 车间二号", "capacity_h": 384.0, "load_h": 44.5, "utilization": 0.1159, "free_h": 339.5, "rank": 2}, {"wc": "WC-CNC1", "name": "CNC 车间一号", "capacity_h": 1024.0, "load_h": 114.8, "utilization": 0.1121, "free_h": 909.2, "rank": 3}, {"wc": "WC-WELD", "name": "焊接工段", "capacity_h": 585.2, "load_h": 53.0, "utilization": 0.0906, "free_h": 532.2, "rank": 4}, {"wc": "WC-PAINT", "name": "喷涂线", "capacity_h": 460.8, "load_h": 20.5, "utilization": 0.0445, "free_h": 440.3, "rank": 5}, {"wc": "WC-QC", "name": "检验站", "capacity_h": 512.0, "load_h": 18.5, "utilization": 0.0361, "free_h": 493.5, "rank": 6}], "bottleneck": {"wc": "WC-ASSY"}}, "/api/plan/gantt": {"run_no": "RUN0002", "start_date": "2026-10-23", "horizon_days": 90, "by_wc": {"WC-CNC1": [{"id": 43, "run_id": 2, "wo": "WO0106", "seq": 10, "wc": "WC-CNC1", "hours": 15.0, "start_date": "2026-10-23", "start_h": 18.0, "end_date": "2026-10-26", "end_h": 17.0}, {"id": 32, "run_id": 2, "wo": "WO0108", "seq": 10, "wc": "WC-CNC1", "hours": 10.0, "start_date": "2026-10-23", "start_h": 8.0, "end_date": "2026-10-23", "end_h": 18.0}, {"id": 48, "run_id": 2, "wo": "WO0101", "seq": 10, "wc": "WC-CNC1", "hours": 16.0, "start_date": "2026-10-26", "start_h": 17.0, "end_date": "2026-10-27", "end_h": 17.0}, {"id": 53, "run_id": 2, "wo": "WO0109", "seq": 10, "wc": "WC-CNC1", "hours": 15.5, "start_date": "2026-10-27", "start_h": 17.0, "end_date": "2026-10-28", "end_h": 16.5}, {"id": 55, "run_id": 2, "wo": "WO0105", "seq": 10, "wc": "WC-CNC1", "hours": 25.0, "start_date": "2026-10-28", "start_h": 16.5, "end_date": "2026-10-30", "end_h": 9.5}, {"id": 57, "run_id": 2, "wo": "WO0103", "seq": 10, "wc": "WC-CNC1", "hours": 17.0, "start_date": "2026-10-30", "start_h": 9.5, "end_date": "2026-11-02", "end_h": 10.5}, {"id": 62, "run_id": 2, "wo": "WO0110", "seq": 10, "wc": "WC-CNC1", "hours": 16.3, "start_date": "2026-11-02", "start_h": 10.5, "end_date": "2026-11-03", "end_h": 10.8}], "WC-CNC2": [{"id": 37, "run_id": 2, "wo": "WO0107", "seq": 10, "wc": "WC-CNC2", "hours": 9.0, "start_date": "2026-10-23", "start_h": 8.0, "end_date": "2026-10-26", "end_h": 11.0}, {"id": 40, "run_id": 2, "wo": "WO0104", "seq": 10, "wc": "WC-CNC2", "hours": 14.0, "start_date": "2026-10-26", "start_h": 11.0, "end_date": "2026-10-28", "end_h": 13.0}, {"id": 45, "run_id": 2, "wo": "WO0102", "seq": 10, "wc": "WC-CNC2", "hours": 15.0, "start_date": "2026-10-28", "start_h": 13.0, "end_date": "2026-11-02", "end_h": 10.0}, {"id": 59, "run_id": 2, "wo": "WO0103", "seq": 30, "wc": "WC-CNC2", "hours": 6.5, "start_date": "2026-11-05", "start_h": 8.0, "end_date": "2026-11-06", "end_h": 8.5}], "WC-WELD": [{"id": 33, "run_id": 2, "wo": "WO0108", "seq": 20, "wc": "WC-WELD", "hours": 8.0, "start_date": "2026-10-23", "start_h": 8.0, "end_date": "2026-10-24", "end_h": 8.4}, {"id": 49, "run_id": 2, "wo": "WO0101", "seq": 20, "wc": "WC-WELD", "hours": 13.0, "start_date": "2026-10-27", "start_h": 8.0, "end_date": "2026-10-28", "end_h": 13.4}, {"id": 56, "run_id": 2, "wo": "WO0105", "seq": 20, "wc": "WC-WELD", "hours": 19.0, "start_date": "2026-10-30", "start_h": 8.0, "end_date": "2026-11-02", "end_h": 11.8}, {"id": 58, "run_id": 2, "wo": "WO0103", "seq": 20, "wc": "WC-WELD", "hours": 13.0, "start_date": "2026-11-02", "start_h": 11.8, "end_date": "2026-11-04", "end_h": 9.6}], "WC-ASSY": [{"id": 44, "run_id": 2, "wo": "WO0106", "seq": 20, "wc": "WC-ASSY", "hours": 10.5, "start_date": "2026-10-26", "start_h": 14.5, "end_date": "2026-10-30", "end_h": 16.0}, {"id": 38, "run_id": 2, "wo": "WO0107", "seq": 20, "wc": "WC-ASSY", "hours": 6.5, "start_date": "2026-10-26", "start_h": 8.0, "end_date": "2026-10-26", "end_h": 14.5}, {"id": 35, "run_id": 2, "wo": "WO0108", "seq": 40, "wc": "WC-ASSY", "hours": 14.0, "start_date": "2026-10-27", "start_h": 8.0, "end_date": "2026-10-28", "end_h": 14.0}, {"id": 41, "run_id": 2, "wo": "WO0104", "seq": 20, "wc": "WC-ASSY", "hours": 9.0, "start_date": "2026-10-28", "start_h": 14.0, "end_date": "2026-10-29", "end_h": 15.0}, {"id": 46, "run_id": 2, "wo": "WO0102", "seq": 20, "wc": "WC-ASSY", "hours": 11.0, "start_date": "2026-11-02", "start_h": 8.0, "end_date": "2026-11-03", "end_h": 11.0}, {"id": 51, "run_id": 2, "wo": "WO0101", "seq": 40, "wc": "WC-ASSY", "hours": 22.0, "start_date": "2026-11-03", "start_h": 11.0, "end_date": "2026-11-06", "end_h": 9.0}, {"id": 60, "run_id": 2, "wo": "WO0103", "seq": 40, "wc": "WC-ASSY", "hours": 23.0, "start_date": "2026-11-06", "start_h": 9.0, "end_date": "2026-11-10", "end_h": 16.0}], "WC-PAINT": [{"id": 34, "run_id": 2, "wo": "WO0108", "seq": 30, "wc": "WC-PAINT", "hours": 4.0, "start_date": "2026-10-26", "start_h": 8.0, "end_date": "2026-10-26", "end_h": 12.0}, {"id": 54, "run_id": 2, "wo": "WO0109", "seq": 20, "wc": "WC-PAINT", "hours": 10.5, "start_date": "2026-10-28", "start_h": 8.0, "end_date": "2026-10-30", "end_h": 10.1}, {"id": 50, "run_id": 2, "wo": "WO0101", "seq": 30, "wc": "WC-PAINT", "hours": 6.0, "start_date": "2026-10-29", "start_h": 8.0, "end_date": "2026-10-29", "end_h": 14.0}], "WC-QC": [{"id": 39, "run_id": 2, "wo": "WO0107", "seq": 30, "wc": "WC-QC", "hours": 2.2, "start_date": "2026-10-26", "start_h": 8.0, "end_date": "2026-10-26", "end_h": 10.2}, {"id": 36, "run_id": 2, "wo": "WO0108", "seq": 50, "wc": "WC-QC", "hours": 2.0, "start_date": "2026-10-28", "start_h": 8.0, "end_date": "2026-10-28", "end_h": 10.0}, {"id": 42, "run_id": 2, "wo": "WO0104", "seq": 30, "wc": "WC-QC", "hours": 3.5, "start_date": "2026-10-29", "start_h": 8.0, "end_date": "2026-10-29", "end_h": 11.5}, {"id": 47, "run_id": 2, "wo": "WO0102", "seq": 30, "wc": "WC-QC", "hours": 3.4, "start_date": "2026-11-03", "start_h": 8.0, "end_date": "2026-11-03", "end_h": 11.4}, {"id": 52, "run_id": 2, "wo": "WO0101", "seq": 50, "wc": "WC-QC", "hours": 3.0, "start_date": "2026-11-06", "start_h": 8.0, "end_date": "2026-11-06", "end_h": 11.0}, {"id": 61, "run_id": 2, "wo": "WO0103", "seq": 50, "wc": "WC-QC", "hours": 4.4, "start_date": "2026-11-10", "start_h": 8.0, "end_date": "2026-11-10", "end_h": 12.4}]}, "work_orders": {"WO0101": {"no": "WO0101", "product": "P-CONV", "qty": 4.0, "due_date": "2026-11-04", "status": "排产中"}, "WO0102": {"no": "WO0102", "product": "P-MIXER", "qty": 6.0, "due_date": "2026-11-02", "status": "排产中"}, "WO0103": {"no": "WO0103", "product": "P-LIFTER", "qty": 3.0, "due_date": "2026-11-10", "status": "排产中"}, "WO0104": {"no": "WO0104", "product": "P-FAN", "qty": 10.0, "due_date": "2026-10-31", "status": "排产中"}, "WO0105": {"no": "WO0105", "product": "P-RACK", "qty": 30.0, "due_date": "2026-11-07", "status": "排产中"}, "WO0106": {"no": "WO0106", "product": "P-TROLLEY", "qty": 20.0, "due_date": "2026-11-01", "status": "排产中"}, "WO0107": {"no": "WO0107", "product": "P-MIXER", "qty": 3.0, "due_date": "2026-10-30", "status": "排产中"}, "WO0108": {"no": "WO0108", "product": "P-CONV", "qty": 2.0, "due_date": "2026-10-29", "status": "排产中"}, "WO0109": {"no": "WO0109", "product": "P-GUARD", "qty": 50.0, "due_date": "2026-11-06", "status": "排产中"}, "WO0110": {"no": "WO0110", "product": "P-BRACKET", "qty": 80.0, "due_date": "2026-11-12", "status": "排产中"}}}, "/api/plan/load": {"run_no": "RUN0002", "loads": [{"wc": "WC-ASSY", "name": "总装线", "capacity_h": 512.0, "load_h": 96.0, "utilization": 0.1875, "free_h": 416.0, "rank": 1, "level": "ok"}, {"wc": "WC-CNC2", "name": "CNC 车间二号", "capacity_h": 384.0, "load_h": 44.5, "utilization": 0.1159, "free_h": 339.5, "rank": 2}, {"wc": "WC-CNC1", "name": "CNC 车间一号", "capacity_h": 1024.0, "load_h": 114.8, "utilization": 0.1121, "free_h": 909.2, "rank": 3}, {"wc": "WC-WELD", "name": "焊接工段", "capacity_h": 585.2, "load_h": 53.0, "utilization": 0.0906, "free_h": 532.2, "rank": 4}, {"wc": "WC-PAINT", "name": "喷涂线", "capacity_h": 460.8, "load_h": 20.5, "utilization": 0.0445, "free_h": 440.3, "rank": 5}, {"wc": "WC-QC", "name": "检验站", "capacity_h": 512.0, "load_h": 18.5, "utilization": 0.0361, "free_h": 493.5, "rank": 6}], "bottleneck": {"wc": "WC-ASSY"}}, "/api/plan/run": {"run_no": "RUN0002", "run_id": 2, "rule": "EDD", "start": "2026-10-23", "wo_count": 10, "late_count": 2, "bottleneck": {"wc": "WC-ASSY", "name": "总装线", "capacity_h": 512.0, "load_h": 96.0, "utilization": 0.1875, "free_h": 416.0, "rank": 1, "level": "ok"}, "loads": [{"wc": "WC-ASSY", "name": "总装线", "capacity_h": 512.0, "load_h": 96.0, "utilization": 0.1875, "free_h": 416.0, "rank": 1, "level": "ok"}, {"wc": "WC-CNC2", "name": "CNC 车间二号", "capacity_h": 384.0, "load_h": 44.5, "utilization": 0.1159, "free_h": 339.5, "rank": 2}, {"wc": "WC-CNC1", "name": "CNC 车间一号", "capacity_h": 1024.0, "load_h": 114.8, "utilization": 0.1121, "free_h": 909.2, "rank": 3}, {"wc": "WC-WELD", "name": "焊接工段", "capacity_h": 585.2, "load_h": 53.0, "utilization": 0.0906, "free_h": 532.2, "rank": 4}, {"wc": "WC-PAINT", "name": "喷涂线", "capacity_h": 460.8, "load_h": 20.5, "utilization": 0.0445, "free_h": 440.3, "rank": 5}, {"wc": "WC-QC", "name": "检验站", "capacity_h": 512.0, "load_h": 18.5, "utilization": 0.0361, "free_h": 493.5, "rank": 6}], "results": [{"wo": "WO0108", "product": "P-CONV", "qty": 2.0, "due_date": "2026-10-29", "priority": 1, "total_hours": 38.0, "start": "2026-10-23", "end": "2026-10-28", "late_days": 0, "late": false, "feasible": true, "ops": [{"seq": 10, "wc": "WC-CNC1", "hours": 10.0, "start": "2026-10-23", "start_h": 8.0, "end": "2026-10-23", "end_h": 18.0}, {"seq": 20, "wc": "WC-WELD", "hours": 8.0, "start": "2026-10-23", "start_h": 8.0, "end": "2026-10-24", "end_h": 8.4}, {"seq": 30, "wc": "WC-PAINT", "hours": 4.0, "start": "2026-10-26", "start_h": 8.0, "end": "2026-10-26", "end_h": 12.0}, {"seq": 40, "wc": "WC-ASSY", "hours": 14.0, "start": "2026-10-27", "start_h": 8.0, "end": "2026-10-28", "end_h": 14.0}, {"seq": 50, "wc": "WC-QC", "hours": 2.0, "start": "2026-10-28", "start_h": 8.0, "end": "2026-10-28", "end_h": 10.0}]}, {"wo": "WO0107", "product": "P-MIXER", "qty": 3.0, "due_date": "2026-10-30", "priority": 1, "total_hours": 17.7, "start": "2026-10-23", "end": "2026-10-26", "late_days": 0, "late": false, "feasible": true, "ops": [{"seq": 10, "wc": "WC-CNC2", "hours": 9.0, "start": "2026-10-23", "start_h": 8.0, "end": "2026-10-26", "end_h": 11.0}, {"seq": 20, "wc": "WC-ASSY", "hours": 6.5, "start": "2026-10-26", "start_h": 8.0, "end": "2026-10-26", "end_h": 14.5}, {"seq": 30, "wc": "WC-QC", "hours": 2.2, "start": "2026-10-26", "start_h": 8.0, "end": "2026-10-26", "end_h": 10.2}]}, {"wo": "WO0104", "product": "P-FAN", "qty": 10.0, "due_date": "2026-10-31", "priority": 3, "total_hours": 26.5, "start": "2026-10-26", "end": "2026-10-29", "late_days": 0, "late": false, "feasible": true, "ops": [{"seq": 10, "wc": "WC-CNC2", "hours": 14.0, "start": "2026-10-26", "start_h": 11.0, "end": "2026-10-28", "end_h": 13.0}, {"seq": 20, "wc": "WC-ASSY", "hours": 9.0, "start": "2026-10-28", "start_h": 14.0, "end": "2026-10-29", "end_h": 15.0}, {"seq": 30, "wc": "WC-QC", "hours": 3.5, "start": "2026-10-29", "start_h": 8.0, "end": "2026-10-29", "end_h": 11.5}]}, {"wo": "WO0106", "product": "P-TROLLEY", "qty": 20.0, "due_date": "2026-11-01", "priority": 3, "total_hours": 25.5, "start": "2026-10-23", "end": "2026-10-30", "late_days": 0, "late": false, "feasible": true, "ops": [{"seq": 10, "wc": "WC-CNC1", "hours": 15.0, "start": "2026-10-23", "start_h": 18.0, "end": "2026-10-26", "end_h": 17.0}, {"seq": 20, "wc": "WC-ASSY", "hours": 10.5, "start": "2026-10-26", "start_h": 14.5, "end": "2026-10-30", "end_h": 16.0}]}, {"wo": "WO0102", "product": "P-MIXER", "qty": 6.0, "due_date": "2026-11-02", "priority": 3, "total_hours": 29.4, "start": "2026-10-28", "end": "2026-11-03", "late_days": 1, "late": true, "feasible": true, "ops": [{"seq": 10, "wc": "WC-CNC2", "hours": 15.0, "start": "2026-10-28", "start_h": 13.0, "end": "2026-11-02", "end_h": 10.0}, {"seq": 20, "wc": "WC-ASSY", "hours": 11.0, "start": "2026-11-02", "start_h": 8.0, "end": "2026-11-03", "end_h": 11.0}, {"seq": 30, "wc": "WC-QC", "hours": 3.4, "start": "2026-11-03", "start_h": 8.0, "end": "2026-11-03", "end_h": 11.4}]}, {"wo": "WO0101", "product": "P-CONV", "qty": 4.0, "due_date": "2026-11-04", "priority": 2, "total_hours": 60.0, "start": "2026-10-26", "end": "2026-11-06", "late_days": 2, "late": true, "feasible": true, "ops": [{"seq": 10, "wc": "WC-CNC1", "hours": 16.0, "start": "2026-10-26", "start_h": 17.0, "end": "2026-10-27", "end_h": 17.0}, {"seq": 20, "wc": "WC-WELD", "hours": 13.0, "start": "2026-10-27", "start_h": 8.0, "end": "2026-10-28", "end_h": 13.4}, {"seq": 30, "wc": "WC-PAINT", "hours": 6.0, "start": "2026-10-29", "start_h": 8.0, "end": "2026-10-29", "end_h": 14.0}, {"seq": 40, "wc": "WC-ASSY", "hours": 22.0, "start": "2026-11-03", "start_h": 11.0, "end": "2026-11-06", "end_h": 9.0}, {"seq": 50, "wc": "WC-QC", "hours": 3.0, "start": "2026-11-06", "start_h": 8.0, "end": "2026-11-06", "end_h": 11.0}]}, {"wo": "WO0109", "product": "P-GUARD", "qty": 50.0, "due_date": "2026-11-06", "priority": 3, "total_hours": 26.0, "start": "2026-10-27", "end": "2026-10-30", "late_days": 0, "late": false, "feasible": true, "ops": [{"seq": 10, "wc": "WC-CNC1", "hours": 15.5, "start": "2026-10-27", "start_h": 17.0, "end": "2026-10-28", "end_h": 16.5}, {"seq": 20, "wc": "WC-PAINT", "hours": 10.5, "start": "2026-10-28", "start_h": 8.0, "end": "2026-10-30", "end_h": 10.1}]}, {"wo": "WO0105", "product": "P-RACK", "qty": 30.0, "due_date": "2026-11-07", "priority": 3, "total_hours": 44.0, "start": "2026-10-28", "end": "2026-11-02", "late_days": 0, "late": false, "feasible": true, "ops": [{"seq": 10, "wc": "WC-CNC1", "hours": 25.0, "start": "2026-10-28", "start_h": 16.5, "end": "2026-10-30", "end_h": 9.5}, {"seq": 20, "wc": "WC-WELD", "hours": 19.0, "start": "2026-10-30", "start_h": 8.0, "end": "2026-11-02", "end_h": 11.8}]}, {"wo": "WO0103", "product": "P-LIFTER", "qty": 3.0, "due_date": "2026-11-10", "priority": 2, "total_hours": 63.9, "start": "2026-10-30", "end": "2026-11-10", "late_days": 0, "late": false, "feasible": true, "ops": [{"seq": 10, "wc": "WC-CNC1", "hours": 17.0, "start": "2026-10-30", "start_h": 9.5, "end": "2026-11-02", "end_h": 10.5}, {"seq": 20, "wc": "WC-WELD", "hours": 13.0, "start": "2026-11-02", "start_h": 11.8, "end": "2026-11-04", "end_h": 9.6}, {"seq": 30, "wc": "WC-CNC2", "hours": 6.5, "start": "2026-11-05", "start_h": 8.0, "end": "2026-11-06", "end_h": 8.5}, {"seq": 40, "wc": "WC-ASSY", "hours": 23.0, "start": "2026-11-06", "start_h": 9.0, "end": "2026-11-10", "end_h": 16.0}, {"seq": 50, "wc": "WC-QC", "hours": 4.4, "start": "2026-11-10", "start_h": 8.0, "end": "2026-11-10", "end_h": 12.4}]}, {"wo": "WO0110", "product": "P-BRACKET", "qty": 80.0, "due_date": "2026-11-12", "priority": 3, "total_hours": 16.3, "start": "2026-11-02", "end": "2026-11-03", "late_days": 0, "late": false, "feasible": true, "ops": [{"seq": 10, "wc": "WC-CNC1", "hours": 16.3, "start": "2026-11-02", "start_h": 10.5, "end": "2026-11-03", "end_h": 10.8}]}], "kit": [{"wo": "WO0108", "product": "P-CONV", "kit_ok": true, "shortage": [], "need": {"M-STEEL": 8.0, "M-BEAR": 16.0, "M-MOTOR": 4.0, "M-SCREW": 4.0, "M-PKG": 2.0}}, {"wo": "WO0107", "product": "P-MIXER", "kit_ok": true, "shortage": [], "need": {"M-BLANK": 3.0, "M-MOTOR": 3.0, "M-SEAL": 6.0, "M-SCREW": 3.0, "M-PKG": 3.0}}, {"wo": "WO0104", "product": "P-FAN", "kit_ok": true, "shortage": [], "need": {"M-BLANK": 10.0, "M-BEAR": 20.0, "M-MOTOR": 10.0, "M-SCREW": 10.0}}, {"wo": "WO0106", "product": "P-TROLLEY", "kit_ok": true, "shortage": [], "need": {"M-STEEL": 20.0, "M-GEAR": 20.0, "M-SCREW": 20.0}}, {"wo": "WO0102", "product": "P-MIXER", "kit_ok": true, "shortage": [], "need": {"M-BLANK": 6.0, "M-MOTOR": 6.0, "M-SEAL": 12.0, "M-SCREW": 6.0, "M-PKG": 6.0}}, {"wo": "WO0101", "product": "P-CONV", "kit_ok": false, "shortage": [{"material": "M-MOTOR", "need": 8.0, "stock": 3.0, "gap": 5.0}], "need": {"M-STEEL": 16.0, "M-BEAR": 32.0, "M-MOTOR": 8.0, "M-SCREW": 8.0, "M-PKG": 4.0}}, {"wo": "WO0109", "product": "P-GUARD", "kit_ok": true, "shortage": [], "need": {"M-STEEL": 25.0, "M-PAINT": 5.0}}, {"wo": "WO0105", "product": "P-RACK", "kit_ok": false, "shortage": [{"material": "M-STEEL", "need": 90.0, "stock": 67.0, "gap": 23.0}], "need": {"M-STEEL": 90.0, "M-SCREW": 30.0}}, {"wo": "WO0103", "product": "P-LIFTER", "kit_ok": true, "shortage": [], "need": {"M-STEEL": 18.0, "M-SEAL": 12.0, "M-PLCX": 3.0, "M-SCREW": 6.0, "M-PKG": 3.0}}, {"wo": "WO0110", "product": "P-BRACKET", "kit_ok": true, "shortage": [], "need": {"M-STEEL": 16.0}}], "shortage": [{"material": "M-STEEL", "total_gap": 23.0, "block_wos": ["WO0105"]}, {"material": "M-MOTOR", "total_gap": 5.0, "block_wos": ["WO0101"]}], "alerts": [{"atype": "ORDER_NEAR", "target": "WO0108", "level": "mid", "message": "工单 WO0108 距交期缓冲仅 1 天", "value": 1, "threshold": 3}, {"atype": "ORDER_NEAR", "target": "WO0104", "level": "mid", "message": "工单 WO0104 距交期缓冲仅 2 天", "value": 2, "threshold": 3}, {"atype": "ORDER_NEAR", "target": "WO0106", "level": "mid", "message": "工单 WO0106 距交期缓冲仅 2 天", "value": 2, "threshold": 3}, {"atype": "ORDER_LATE", "target": "WO0102", "level": "high", "message": "工单 WO0102 预计 2026-11-03 完工，迟于交期 1 天", "value": 1, "threshold": 0}, {"atype": "ORDER_LATE", "target": "WO0101", "level": "high", "message": "工单 WO0101 预计 2026-11-06 完工，迟于交期 2 天", "value": 2, "threshold": 0}, {"atype": "ORDER_NEAR", "target": "WO0103", "level": "mid", "message": "工单 WO0103 距交期缓冲仅 0 天", "value": 0, "threshold": 3}, {"atype": "MAT_SHORT", "target": "M-STEEL", "level": "high", "message": "物料 M-STEEL 缺口 23.0，阻塞 1 个工单", "value": 23.0, "threshold": 0}, {"atype": "MAT_SHORT", "target": "M-MOTOR", "level": "high", "message": "物料 M-MOTOR 缺口 5.0，阻塞 1 个工单", "value": 5.0, "threshold": 0}], "alert_nos": ["AL0009", "AL0010", "AL0011", "AL0012", "AL0013", "AL0014", "AL0015", "AL0016"], "stock_after": {"M-BLANK": 21.0, "M-STEEL": 33.0, "M-BEAR": 54.0, "M-MOTOR": 3.0, "M-PLCX": 19.0, "M-WIRE": 60.0, "M-PAINT": 25.0, "M-SCREW": 151.0, "M-SEAL": 25.0, "M-GEAR": 10.0, "M-SENSOR": 80.0, "M-PKG": 11.0}}, "/api/kit/run": {"check_no": "KIT0001", "rows": [{"wo": "WO0108", "product": "P-CONV", "kit_ok": true, "shortage": [], "need": {"M-STEEL": 8.0, "M-BEAR": 16.0, "M-MOTOR": 4.0, "M-SCREW": 4.0, "M-PKG": 2.0}}, {"wo": "WO0107", "product": "P-MIXER", "kit_ok": true, "shortage": [], "need": {"M-BLANK": 3.0, "M-MOTOR": 3.0, "M-SEAL": 6.0, "M-SCREW": 3.0, "M-PKG": 3.0}}, {"wo": "WO0104", "product": "P-FAN", "kit_ok": true, "shortage": [], "need": {"M-BLANK": 10.0, "M-BEAR": 20.0, "M-MOTOR": 10.0, "M-SCREW": 10.0}}, {"wo": "WO0106", "product": "P-TROLLEY", "kit_ok": true, "shortage": [], "need": {"M-STEEL": 20.0, "M-GEAR": 20.0, "M-SCREW": 20.0}}, {"wo": "WO0102", "product": "P-MIXER", "kit_ok": true, "shortage": [], "need": {"M-BLANK": 6.0, "M-MOTOR": 6.0, "M-SEAL": 12.0, "M-SCREW": 6.0, "M-PKG": 6.0}}, {"wo": "WO0101", "product": "P-CONV", "kit_ok": false, "shortage": [{"material": "M-MOTOR", "need": 8.0, "stock": 3.0, "gap": 5.0}], "need": {"M-STEEL": 16.0, "M-BEAR": 32.0, "M-MOTOR": 8.0, "M-SCREW": 8.0, "M-PKG": 4.0}}, {"wo": "WO0109", "product": "P-GUARD", "kit_ok": true, "shortage": [], "need": {"M-STEEL": 25.0, "M-PAINT": 5.0}}, {"wo": "WO0105", "product": "P-RACK", "kit_ok": false, "shortage": [{"material": "M-STEEL", "need": 90.0, "stock": 67.0, "gap": 23.0}], "need": {"M-STEEL": 90.0, "M-SCREW": 30.0}}, {"wo": "WO0103", "product": "P-LIFTER", "kit_ok": true, "shortage": [], "need": {"M-STEEL": 18.0, "M-SEAL": 12.0, "M-PLCX": 3.0, "M-SCREW": 6.0, "M-PKG": 3.0}}, {"wo": "WO0110", "product": "P-BRACKET", "kit_ok": true, "shortage": [], "need": {"M-STEEL": 16.0}}], "shortage": [{"material": "M-STEEL", "total_gap": 23.0, "block_wos": ["WO0105"]}, {"material": "M-MOTOR", "total_gap": 5.0, "block_wos": ["WO0101"]}], "stock_after": {"M-BLANK": 21.0, "M-STEEL": 33.0, "M-BEAR": 54.0, "M-MOTOR": 3.0, "M-PLCX": 19.0, "M-WIRE": 60.0, "M-PAINT": 25.0, "M-SCREW": 151.0, "M-SEAL": 25.0, "M-GEAR": 10.0, "M-SENSOR": 80.0, "M-PKG": 11.0}, "ok_count": 8, "block_count": 2}, "/api/kit/history": [{"check_no": "KIT0001", "wo": "WO0110", "product": "P-BRACKET", "kit_ok": 1, "checked_at": "2026-10-23 09:22:02"}, {"check_no": "KIT0001", "wo": "WO0103", "product": "P-LIFTER", "kit_ok": 1, "checked_at": "2026-10-23 09:22:02"}, {"check_no": "KIT0001", "wo": "WO0105", "product": "P-RACK", "kit_ok": 0, "checked_at": "2026-10-23 09:22:02"}, {"check_no": "KIT0001", "wo": "WO0109", "product": "P-GUARD", "kit_ok": 1, "checked_at": "2026-10-23 09:22:02"}, {"check_no": "KIT0001", "wo": "WO0101", "product": "P-CONV", "kit_ok": 0, "checked_at": "2026-10-23 09:22:02"}, {"check_no": "KIT0001", "wo": "WO0102", "product": "P-MIXER", "kit_ok": 1, "checked_at": "2026-10-23 09:22:02"}, {"check_no": "KIT0001", "wo": "WO0106", "product": "P-TROLLEY", "kit_ok": 1, "checked_at": "2026-10-23 09:22:02"}, {"check_no": "KIT0001", "wo": "WO0104", "product": "P-FAN", "kit_ok": 1, "checked_at": "2026-10-23 09:22:02"}, {"check_no": "KIT0001", "wo": "WO0107", "product": "P-MIXER", "kit_ok": 1, "checked_at": "2026-10-23 09:22:02"}, {"check_no": "KIT0001", "wo": "WO0108", "product": "P-CONV", "kit_ok": 1, "checked_at": "2026-10-23 09:22:02"}], "/api/ctp/history": [{"id": 3, "product": "P-FAN", "qty": 5.0, "due_date": "2026-11-22", "answer_end": "2026-11-11", "on_time": 1, "feasible": 1, "queried_by": "admin", "queried_at": "2026-10-23 09:22:02"}, {"id": 2, "product": "P-CONV", "qty": 5.0, "due_date": "2026-11-22", "answer_end": "2026-11-16", "on_time": 1, "feasible": 1, "queried_by": "admin", "queried_at": "2026-10-23 09:22:02"}, {"id": 1, "product": "P-BRACKET", "qty": 5.0, "due_date": "2026-11-22", "answer_end": "2026-11-03", "on_time": 1, "feasible": 1, "queried_by": "admin", "queried_at": "2026-10-23 09:22:02"}], "/api/sales-orders": [{"no": "SO-2026-0108", "customer": "出口代理", "product": "P-CONV", "qty": 2.0, "due_date": "2026-10-29", "priority": 1, "price": 0.0, "status": "待排产", "created_date": "2026-10-18", "remark": ""}, {"no": "SO-2026-0107", "customer": "食品集团", "product": "P-MIXER", "qty": 3.0, "due_date": "2026-10-30", "priority": 1, "price": 0.0, "status": "待排产", "created_date": "2026-10-18", "remark": ""}, {"no": "SO-2026-0104", "customer": "西南矿业", "product": "P-FAN", "qty": 10.0, "due_date": "2026-10-31", "priority": 3, "price": 0.0, "status": "待排产", "created_date": "2026-10-18", "remark": ""}, {"no": "SO-2026-0106", "customer": "华东重工", "product": "P-TROLLEY", "qty": 20.0, "due_date": "2026-11-01", "priority": 3, "price": 0.0, "status": "待排产", "created_date": "2026-10-18", "remark": ""}, {"no": "SO-2026-0102", "customer": "华南建材", "product": "P-MIXER", "qty": 6.0, "due_date": "2026-11-02", "priority": 3, "price": 0.0, "status": "待排产", "created_date": "2026-10-18", "remark": ""}, {"no": "SO-2026-0101", "customer": "华东重工", "product": "P-CONV", "qty": 4.0, "due_date": "2026-11-04", "priority": 2, "price": 0.0, "status": "待排产", "created_date": "2026-10-18", "remark": ""}, {"no": "SO-2026-0109", "customer": "华南建材", "product": "P-GUARD", "qty": 50.0, "due_date": "2026-11-06", "priority": 3, "price": 0.0, "status": "待排产", "created_date": "2026-10-18", "remark": ""}, {"no": "SO-2026-0105", "customer": "中原仓储", "product": "P-RACK", "qty": 30.0, "due_date": "2026-11-07", "priority": 3, "price": 0.0, "status": "待排产", "created_date": "2026-10-18", "remark": ""}, {"no": "SO-2026-0103", "customer": "北方物流", "product": "P-LIFTER", "qty": 3.0, "due_date": "2026-11-10", "priority": 2, "price": 0.0, "status": "待排产", "created_date": "2026-10-18", "remark": ""}, {"no": "SO-2026-0110", "customer": "北方物流", "product": "P-BRACKET", "qty": 80.0, "due_date": "2026-11-12", "priority": 3, "price": 0.0, "status": "待排产", "created_date": "2026-10-18", "remark": ""}], "/api/work-orders": [{"no": "WO0108", "so": "SO-2026-0108", "product": "P-CONV", "qty": 2.0, "due_date": "2026-10-29", "priority": 1, "status": "排产中", "release_date": "2026-10-23", "created_date": "2026-10-18", "remark": ""}, {"no": "WO0107", "so": "SO-2026-0107", "product": "P-MIXER", "qty": 3.0, "due_date": "2026-10-30", "priority": 1, "status": "排产中", "release_date": "2026-10-23", "created_date": "2026-10-18", "remark": ""}, {"no": "WO0104", "so": "SO-2026-0104", "product": "P-FAN", "qty": 10.0, "due_date": "2026-10-31", "priority": 3, "status": "排产中", "release_date": "2026-10-23", "created_date": "2026-10-18", "remark": ""}, {"no": "WO0106", "so": "SO-2026-0106", "product": "P-TROLLEY", "qty": 20.0, "due_date": "2026-11-01", "priority": 3, "status": "排产中", "release_date": "2026-10-23", "created_date": "2026-10-18", "remark": ""}, {"no": "WO0102", "so": "SO-2026-0102", "product": "P-MIXER", "qty": 6.0, "due_date": "2026-11-02", "priority": 3, "status": "排产中", "release_date": "2026-10-23", "created_date": "2026-10-18", "remark": ""}, {"no": "WO0101", "so": "SO-2026-0101", "product": "P-CONV", "qty": 4.0, "due_date": "2026-11-04", "priority": 2, "status": "排产中", "release_date": "2026-10-23", "created_date": "2026-10-18", "remark": ""}, {"no": "WO0109", "so": "SO-2026-0109", "product": "P-GUARD", "qty": 50.0, "due_date": "2026-11-06", "priority": 3, "status": "排产中", "release_date": "2026-10-23", "created_date": "2026-10-18", "remark": ""}, {"no": "WO0105", "so": "SO-2026-0105", "product": "P-RACK", "qty": 30.0, "due_date": "2026-11-07", "priority": 3, "status": "排产中", "release_date": "2026-10-23", "created_date": "2026-10-18", "remark": ""}, {"no": "WO0103", "so": "SO-2026-0103", "product": "P-LIFTER", "qty": 3.0, "due_date": "2026-11-10", "priority": 2, "status": "排产中", "release_date": "2026-10-23", "created_date": "2026-10-18", "remark": ""}, {"no": "WO0110", "so": "SO-2026-0110", "product": "P-BRACKET", "qty": 80.0, "due_date": "2026-11-12", "priority": 3, "status": "排产中", "release_date": "2026-10-23", "created_date": "2026-10-18", "remark": ""}], "/api/workcenters": [{"code": "WC-ASSY", "name": "总装线", "wtype": "装配", "hours_per_day": 8.0, "efficiency": 1.0, "work_days": "1,2,3,4,5", "shift": "白班", "cost_rate": 60.0, "status": "运行", "remark": ""}, {"code": "WC-CNC1", "name": "CNC 车间一号", "wtype": "机加", "hours_per_day": 16.0, "efficiency": 1.0, "work_days": "1,2,3,4,5", "shift": "两班", "cost_rate": 120.0, "status": "运行", "remark": ""}, {"code": "WC-CNC2", "name": "CNC 车间二号", "wtype": "机加", "hours_per_day": 8.0, "efficiency": 0.75, "work_days": "1,2,3,4,5", "shift": "白班", "cost_rate": 100.0, "status": "运行", "remark": ""}, {"code": "WC-PAINT", "name": "喷涂线", "wtype": "表面", "hours_per_day": 8.0, "efficiency": 0.9, "work_days": "1,2,3,4,5", "shift": "白班", "cost_rate": 50.0, "status": "运行", "remark": ""}, {"code": "WC-QC", "name": "检验站", "wtype": "质检", "hours_per_day": 8.0, "efficiency": 1.0, "work_days": "1,2,3,4,5", "shift": "白班", "cost_rate": 40.0, "status": "运行", "remark": ""}, {"code": "WC-WELD", "name": "焊接工段", "wtype": "焊接", "hours_per_day": 8.0, "efficiency": 0.95, "work_days": "1,2,3,4,5,6", "shift": "白班", "cost_rate": 80.0, "status": "运行", "remark": ""}], "/api/materials": [{"code": "M-BEAR", "name": "精密轴承 6205", "unit": "套", "stock": 90.0, "safety": 40.0, "lead_days": 10, "price": 45.0, "supplier": "NSK 代理", "remark": ""}, {"code": "M-BLANK", "name": "铸件毛坯", "unit": "件", "stock": 40.0, "safety": 10.0, "lead_days": 14, "price": 260.0, "supplier": "华铸机械", "remark": ""}, {"code": "M-GEAR", "name": "精密齿轮组", "unit": "套", "stock": 30.0, "safety": 8.0, "lead_days": 18, "price": 210.0, "supplier": "精锻厂", "remark": ""}, {"code": "M-MOTOR", "name": "伺服电机 750W", "unit": "台", "stock": 26.0, "safety": 10.0, "lead_days": 15, "price": 850.0, "supplier": "汇川", "remark": ""}, {"code": "M-PAINT", "name": "工业面漆", "unit": "桶", "stock": 30.0, "safety": 8.0, "lead_days": 7, "price": 320.0, "supplier": "湘江涂料", "remark": ""}, {"code": "M-PKG", "name": "出口木箱", "unit": "只", "stock": 25.0, "safety": 5.0, "lead_days": 4, "price": 150.0, "supplier": "包装厂", "remark": ""}, {"code": "M-PLCX", "name": "PLC 控制器", "unit": "台", "stock": 22.0, "safety": 8.0, "lead_days": 21, "price": 1200.0, "supplier": "西门子", "remark": ""}, {"code": "M-SCREW", "name": "紧固件包", "unit": "包", "stock": 200.0, "safety": 50.0, "lead_days": 3, "price": 15.0, "supplier": "标准件市场", "remark": ""}, {"code": "M-SEAL", "name": "密封圈套件", "unit": "套", "stock": 55.0, "safety": 15.0, "lead_days": 10, "price": 28.0, "supplier": "亚大", "remark": ""}, {"code": "M-SENSOR", "name": "接近开关", "unit": "只", "stock": 80.0, "safety": 20.0, "lead_days": 5, "price": 35.0, "supplier": "欧姆龙", "remark": ""}, {"code": "M-STEEL", "name": "45# 钢板", "unit": "张", "stock": 120.0, "safety": 30.0, "lead_days": 5, "price": 180.0, "supplier": "宝钢代理", "remark": ""}, {"code": "M-WIRE", "name": "线束组件", "unit": "套", "stock": 60.0, "safety": 20.0, "lead_days": 7, "price": 90.0, "supplier": " lokal厂", "remark": ""}], "/api/products": [{"code": "P-BRACKET", "name": "定制支架", "unit": "件", "category": "部件", "std_price": 350.0, "status": "启用", "remark": ""}, {"code": "P-CONV", "name": "皮带输送机", "unit": "台", "category": "整机", "std_price": 28000.0, "status": "启用", "remark": ""}, {"code": "P-FAN", "name": "工业风机", "unit": "台", "category": "整机", "std_price": 9800.0, "status": "启用", "remark": ""}, {"code": "P-GUARD", "name": "安全护罩", "unit": "件", "category": "部件", "std_price": 800.0, "status": "启用", "remark": ""}, {"code": "P-LIFTER", "name": "液压升降台", "unit": "台", "category": "整机", "std_price": 22400.0, "status": "启用", "remark": ""}, {"code": "P-MIXER", "name": "小型搅拌机", "unit": "台", "category": "整机", "std_price": 15600.0, "status": "启用", "remark": ""}, {"code": "P-RACK", "name": "重型货架", "unit": "组", "category": "部件", "std_price": 4200.0, "status": "启用", "remark": ""}, {"code": "P-TROLLEY", "name": "物流台车", "unit": "辆", "category": "部件", "std_price": 1600.0, "status": "启用", "remark": ""}], "/api/bom": [{"id": 27, "product": "P-BRACKET", "material": "M-STEEL", "qty_per_unit": 0.2, "loss_pct": 3.0, "mat_name": "45# 钢板"}, {"id": 2, "product": "P-CONV", "material": "M-BEAR", "qty_per_unit": 8.0, "loss_pct": 1.0, "mat_name": "精密轴承 6205"}, {"id": 3, "product": "P-CONV", "material": "M-MOTOR", "qty_per_unit": 2.0, "loss_pct": 0.0, "mat_name": "伺服电机 750W"}, {"id": 5, "product": "P-CONV", "material": "M-PKG", "qty_per_unit": 1.0, "loss_pct": 0.0, "mat_name": "出口木箱"}, {"id": 4, "product": "P-CONV", "material": "M-SCREW", "qty_per_unit": 2.0, "loss_pct": 3.0, "mat_name": "紧固件包"}, {"id": 1, "product": "P-CONV", "material": "M-STEEL", "qty_per_unit": 4.0, "loss_pct": 2.0, "mat_name": "45# 钢板"}, {"id": 17, "product": "P-FAN", "material": "M-BEAR", "qty_per_unit": 2.0, "loss_pct": 1.0, "mat_name": "精密轴承 6205"}, {"id": 16, "product": "P-FAN", "material": "M-BLANK", "qty_per_unit": 1.0, "loss_pct": 1.0, "mat_name": "铸件毛坯"}, {"id": 18, "product": "P-FAN", "material": "M-MOTOR", "qty_per_unit": 1.0, "loss_pct": 0.0, "mat_name": "伺服电机 750W"}, {"id": 19, "product": "P-FAN", "material": "M-SCREW", "qty_per_unit": 1.0, "loss_pct": 2.0, "mat_name": "紧固件包"}, {"id": 26, "product": "P-GUARD", "material": "M-PAINT", "qty_per_unit": 0.1, "loss_pct": 0.0, "mat_name": "工业面漆"}, {"id": 25, "product": "P-GUARD", "material": "M-STEEL", "qty_per_unit": 0.5, "loss_pct": 3.0, "mat_name": "45# 钢板"}, {"id": 15, "product": "P-LIFTER", "material": "M-PKG", "qty_per_unit": 1.0, "loss_pct": 0.0, "mat_name": "出口木箱"}, {"id": 13, "product": "P-LIFTER", "material": "M-PLCX", "qty_per_unit": 1.0, "loss_pct": 0.0, "mat_name": "PLC 控制器"}, {"id": 14, "product": "P-LIFTER", "material": "M-SCREW", "qty_per_unit": 2.0, "loss_pct": 2.0, "mat_name": "紧固件包"}, {"id": 12, "product": "P-LIFTER", "material": "M-SEAL", "qty_per_unit": 4.0, "loss_pct": 1.0, "mat_name": "密封圈套件"}, {"id": 11, "product": "P-LIFTER", "material": "M-STEEL", "qty_per_unit": 6.0, "loss_pct": 2.0, "mat_name": "45# 钢板"}, {"id": 6, "product": "P-MIXER", "material": "M-BLANK", "qty_per_unit": 1.0, "loss_pct": 2.0, "mat_name": "铸件毛坯"}, {"id": 7, "product": "P-MIXER", "material": "M-MOTOR", "qty_per_unit": 1.0, "loss_pct": 0.0, "mat_name": "伺服电机 750W"}, {"id": 10, "product": "P-MIXER", "material": "M-PKG", "qty_per_unit": 1.0, "loss_pct": 0.0, "mat_name": "出口木箱"}, {"id": 9, "product": "P-MIXER", "material": "M-SCREW", "qty_per_unit": 1.0, "loss_pct": 2.0, "mat_name": "紧固件包"}, {"id": 8, "product": "P-MIXER", "material": "M-SEAL", "qty_per_unit": 2.0, "loss_pct": 1.0, "mat_name": "密封圈套件"}, {"id": 21, "product": "P-RACK", "material": "M-SCREW", "qty_per_unit": 1.0, "loss_pct": 3.0, "mat_name": "紧固件包"}, {"id": 20, "product": "P-RACK", "material": "M-STEEL", "qty_per_unit": 3.0, "loss_pct": 2.0, "mat_name": "45# 钢板"}, {"id": 23, "product": "P-TROLLEY", "material": "M-GEAR", "qty_per_unit": 1.0, "loss_pct": 1.0, "mat_name": "精密齿轮组"}, {"id": 24, "product": "P-TROLLEY", "material": "M-SCREW", "qty_per_unit": 1.0, "loss_pct": 2.0, "mat_name": "紧固件包"}, {"id": 22, "product": "P-TROLLEY", "material": "M-STEEL", "qty_per_unit": 1.0, "loss_pct": 2.0, "mat_name": "45# 钢板"}], "/api/routings": [{"id": 23, "product": "P-BRACKET", "seq": 10, "wc": "WC-CNC1", "op_name": "切割", "setup_h": 0.3, "run_h_per_unit": 0.2, "transfer_h": 0.0, "wc_name": "CNC 车间一号"}, {"id": 1, "product": "P-CONV", "seq": 10, "wc": "WC-CNC1", "op_name": "机架加工", "setup_h": 4.0, "run_h_per_unit": 3.0, "transfer_h": 0.0, "wc_name": "CNC 车间一号"}, {"id": 2, "product": "P-CONV", "seq": 20, "wc": "WC-WELD", "op_name": "焊接", "setup_h": 3.0, "run_h_per_unit": 2.5, "transfer_h": 2.0, "wc_name": "焊接工段"}, {"id": 3, "product": "P-CONV", "seq": 30, "wc": "WC-PAINT", "op_name": "喷涂", "setup_h": 2.0, "run_h_per_unit": 1.0, "transfer_h": 4.0, "wc_name": "喷涂线"}, {"id": 4, "product": "P-CONV", "seq": 40, "wc": "WC-ASSY", "op_name": "总装", "setup_h": 6.0, "run_h_per_unit": 4.0, "transfer_h": 0.0, "wc_name": "总装线"}, {"id": 5, "product": "P-CONV", "seq": 50, "wc": "WC-QC", "op_name": "终检", "setup_h": 1.0, "run_h_per_unit": 0.5, "transfer_h": 0.0, "wc_name": "检验站"}, {"id": 14, "product": "P-FAN", "seq": 10, "wc": "WC-CNC2", "op_name": "叶轮加工", "setup_h": 2.0, "run_h_per_unit": 1.2, "transfer_h": 0.0, "wc_name": "CNC 车间二号"}, {"id": 15, "product": "P-FAN", "seq": 20, "wc": "WC-ASSY", "op_name": "装配", "setup_h": 1.0, "run_h_per_unit": 0.8, "transfer_h": 0.0, "wc_name": "总装线"}, {"id": 16, "product": "P-FAN", "seq": 30, "wc": "WC-QC", "op_name": "终检", "setup_h": 0.5, "run_h_per_unit": 0.3, "transfer_h": 0.0, "wc_name": "检验站"}, {"id": 21, "product": "P-GUARD", "seq": 10, "wc": "WC-CNC1", "op_name": "冲孔", "setup_h": 0.5, "run_h_per_unit": 0.3, "transfer_h": 0.0, "wc_name": "CNC 车间一号"}, {"id": 22, "product": "P-GUARD", "seq": 20, "wc": "WC-PAINT", "op_name": "喷涂", "setup_h": 0.5, "run_h_per_unit": 0.2, "transfer_h": 0.0, "wc_name": "喷涂线"}, {"id": 9, "product": "P-LIFTER", "seq": 10, "wc": "WC-CNC1", "op_name": "结构件加工", "setup_h": 5.0, "run_h_per_unit": 4.0, "transfer_h": 0.0, "wc_name": "CNC 车间一号"}, {"id": 10, "product": "P-LIFTER", "seq": 20, "wc": "WC-WELD", "op_name": "焊接", "setup_h": 4.0, "run_h_per_unit": 3.0, "transfer_h": 2.0, "wc_name": "焊接工段"}, {"id": 11, "product": "P-LIFTER", "seq": 30, "wc": "WC-CNC2", "op_name": "精加工", "setup_h": 2.0, "run_h_per_unit": 1.5, "transfer_h": 0.0, "wc_name": "CNC 车间二号"}, {"id": 12, "product": "P-LIFTER", "seq": 40, "wc": "WC-ASSY", "op_name": "总装", "setup_h": 8.0, "run_h_per_unit": 5.0, "transfer_h": 0.0, "wc_name": "总装线"}, {"id": 13, "product": "P-LIFTER", "seq": 50, "wc": "WC-QC", "op_name": "终检", "setup_h": 2.0, "run_h_per_unit": 0.8, "transfer_h": 0.0, "wc_name": "检验站"}, {"id": 6, "product": "P-MIXER", "seq": 10, "wc": "WC-CNC2", "op_name": "缸体加工", "setup_h": 3.0, "run_h_per_unit": 2.0, "transfer_h": 0.0, "wc_name": "CNC 车间二号"}, {"id": 7, "product": "P-MIXER", "seq": 20, "wc": "WC-ASSY", "op_name": "装配", "setup_h": 2.0, "run_h_per_unit": 1.5, "transfer_h": 0.0, "wc_name": "总装线"}, {"id": 8, "product": "P-MIXER", "seq": 30, "wc": "WC-QC", "op_name": "终检", "setup_h": 1.0, "run_h_per_unit": 0.4, "transfer_h": 0.0, "wc_name": "检验站"}, {"id": 17, "product": "P-RACK", "seq": 10, "wc": "WC-CNC1", "op_name": "下料", "setup_h": 1.0, "run_h_per_unit": 0.8, "transfer_h": 0.0, "wc_name": "CNC 车间一号"}, {"id": 18, "product": "P-RACK", "seq": 20, "wc": "WC-WELD", "op_name": "焊接", "setup_h": 1.0, "run_h_per_unit": 0.6, "transfer_h": 0.0, "wc_name": "焊接工段"}, {"id": 19, "product": "P-TROLLEY", "seq": 10, "wc": "WC-CNC1", "op_name": "下料折弯", "setup_h": 1.0, "run_h_per_unit": 0.7, "transfer_h": 0.0, "wc_name": "CNC 车间一号"}, {"id": 20, "product": "P-TROLLEY", "seq": 20, "wc": "WC-ASSY", "op_name": "组装", "setup_h": 0.5, "run_h_per_unit": 0.5, "transfer_h": 0.0, "wc_name": "总装线"}], "/api/rules": {"sched_rule": "EDD", "late_warn_days": 3, "util_warn": 0.9, "horizon_days": 90, "default_hours_per_day": 8.0, "default_efficiency": 1.0}, "/api/roles": [{"role": "admin", "label": "管理员", "perms": ["*"]}, {"role": "planner", "label": "计划员", "perms": ["alert.read", "check.read", "ctp.read", "master.read", "master.write", "mat.read", "plan.read", "plan.run", "plan.unlock", "report.read", "so.read", "so.write", "wo.read", "wo.write"]}, {"role": "sched", "label": "排产员", "perms": ["alert.read", "check.read", "ctp.read", "master.read", "mat.read", "plan.read", "plan.run", "report.read", "so.read", "wo.read", "wo.write"]}, {"role": "sales", "label": "销售", "perms": ["alert.read", "ctp.read", "plan.read", "so.read", "so.write", "wo.read"]}, {"role": "prod", "label": "生产", "perms": ["alert.read", "check.read", "mat.read", "plan.read", "wo.read"]}, {"role": "reader", "label": "只读", "perms": ["alert.read", "check.read", "ctp.read", "master.read", "mat.read", "plan.read", "report.read", "so.read", "wo.read"]}], "/api/users": [{"username": "admin", "name": "系统管理员", "role": "admin", "phone": "13800000001", "status": "启用", "created_at": "2026-10-23 09:22:02"}, {"username": "planner", "name": "王计划", "role": "planner", "phone": "13800000002", "status": "启用", "created_at": "2026-10-23 09:22:02"}, {"username": "prod", "name": "赵车间", "role": "prod", "phone": "13800000005", "status": "启用", "created_at": "2026-10-23 09:22:02"}, {"username": "reader", "name": "陈只读", "role": "reader", "phone": "13800000006", "status": "启用", "created_at": "2026-10-23 09:22:02"}, {"username": "sales", "name": "张销售", "role": "sales", "phone": "13800000004", "status": "启用", "created_at": "2026-10-23 09:22:02"}, {"username": "sched", "name": "李排产", "role": "sched", "phone": "13800000003", "status": "启用", "created_at": "2026-10-23 09:22:02"}], "/api/logs": [{"id": 6, "username": "admin", "action": "CTP 查询", "detail": "P-FAN x5", "at": "2026-10-23 09:22:02"}, {"id": 5, "username": "admin", "action": "CTP 查询", "detail": "P-CONV x5", "at": "2026-10-23 09:22:02"}, {"id": 4, "username": "admin", "action": "CTP 查询", "detail": "P-BRACKET x5", "at": "2026-10-23 09:22:02"}, {"id": 3, "username": "admin", "action": "齐套检查", "detail": "KIT0001", "at": "2026-10-23 09:22:02"}, {"id": 2, "username": "admin", "action": "执行排程", "detail": "RUN0002 EDD 10工单 迟交2", "at": "2026-10-23 09:22:02"}, {"id": 1, "username": "admin", "action": "执行排程", "detail": "RUN0001 EDD 10工单 迟交2", "at": "2026-10-23 09:22:02"}], "/api/api-keys": [], "/api/apidoc": {"openapi": "3.0.0", "info": {"title": "飞划APS管理系统", "version": "1.0.0"}, "paths": {"/api/health": {"get": {"operationId": "<lambda>", "permission": "仅登录", "summary": ""}}, "/api/apidoc": {"get": {"operationId": "<lambda>", "permission": "仅登录", "summary": ""}}, "/api/auth/login": {"post": {"operationId": "<lambda>", "permission": "仅登录", "summary": ""}}, "/api/auth/logout": {"post": {"operationId": "api_logout", "permission": "仅登录", "summary": ""}}, "/api/auth/me": {"get": {"operationId": "<lambda>", "permission": "仅登录", "summary": ""}}, "/api/auth/change-password": {"post": {"operationId": "api_change_pwd", "permission": "仅登录", "summary": ""}}, "/api/users": {"get": {"operationId": "api_users", "permission": "system.read", "summary": ""}}, "/api/users/save": {"post": {"operationId": "api_user_save", "permission": "system.write", "summary": ""}}, "/api/users/reset-password": {"post": {"operationId": "api_user_reset", "permission": "system.write", "summary": ""}}, "/api/roles": {"get": {"operationId": "<lambda>", "permission": "仅登录", "summary": ""}}, "/api/workcenters": {"get": {"operationId": "api_wc_list", "permission": "master.read", "summary": ""}}, "/api/workcenters/save": {"post": {"operationId": "api_wc_save", "permission": "master.write", "summary": ""}}, "/api/workcenters/{param}/delete": {"post": {"operationId": "<lambda>", "permission": "master.write", "summary": ""}}, "/api/materials": {"get": {"operationId": "api_mat_list", "permission": "master.read", "summary": ""}}, "/api/materials/save": {"post": {"operationId": "api_mat_save", "permission": "master.write", "summary": ""}}, "/api/materials/{param}/delete": {"post": {"operationId": "<lambda>", "permission": "master.write", "summary": ""}}, "/api/materials/adjust": {"post": {"operationId": "api_mat_adjust", "permission": "master.write", "summary": ""}}, "/api/products": {"get": {"operationId": "api_prod_list", "permission": "master.read", "summary": ""}}, "/api/products/save": {"post": {"operationId": "api_prod_save", "permission": "master.write", "summary": ""}}, "/api/products/{param}/delete": {"post": {"operationId": "<lambda>", "permission": "master.write", "summary": ""}}, "/api/bom": {"get": {"operationId": "api_bom_list", "permission": "master.read", "summary": ""}}, "/api/bom/save": {"post": {"operationId": "api_bom_save", "permission": "master.write", "summary": ""}}, "/api/bom/{param}/{param}/delete": {"post": {"operationId": "<lambda>", "permission": "master.write", "summary": ""}}, "/api/routings": {"get": {"operationId": "api_rt_list", "permission": "master.read", "summary": ""}}, "/api/routings/save": {"post": {"operationId": "api_rt_save", "permission": "master.write", "summary": ""}}, "/api/routings/{param}/{param}/delete": {"post": {"operationId": "<lambda>", "permission": "master.write", "summary": ""}}, "/api/sales-orders": {"get": {"operationId": "api_so_list", "permission": "so.read", "summary": ""}}, "/api/sales-orders/save": {"post": {"operationId": "api_so_save", "permission": "so.write", "summary": ""}}, "/api/sales-orders/{param}/delete": {"post": {"operationId": "<lambda>", "permission": "so.write", "summary": ""}}, "/api/sales-orders/release": {"post": {"operationId": "api_so_release", "permission": "wo.write", "summary": "订单转工单（未生成的生成）"}}, "/api/work-orders": {"get": {"operationId": "api_wo_list", "permission": "wo.read", "summary": ""}}, "/api/work-orders/save": {"post": {"operationId": "api_wo_save", "permission": "wo.write", "summary": ""}}, "/api/work-orders/{param}/delete": {"post": {"operationId": "<lambda>", "permission": "wo.write", "summary": ""}}, "/api/plan/run": {"post": {"operationId": "api_plan_run", "permission": "plan.run", "summary": ""}}, "/api/plan/latest": {"get": {"operationId": "api_plan_latest", "permission": "plan.read", "summary": ""}}, "/api/plan/overview": {"get": {"operationId": "api_plan_overview", "permission": "plan.read", "summary": "看板聚合：一次拿齐最近生效批次 + 负荷，未排程时返回空结构而非 404。"}}, "/api/plan/gantt": {"get": {"operationId": "api_plan_gantt", "permission": "plan.read", "summary": ""}}, "/api/plan/load": {"get": {"operationId": "api_plan_load", "permission": "plan.read", "summary": ""}}, "/api/plan/dayload/{param}": {"get": {"operationId": "<lambda>", "permission": "plan.read", "summary": ""}}, "/api/plan/push-in": {"post": {"operationId": "api_plan_pushin", "permission": "plan.run", "summary": "插单：body {product,qty,due_date,priority,customer,no} → 创建 SO+WO 并重排"}}, "/api/kit/run": {"post": {"operationId": "api_kit_run", "permission": "check.read", "summary": ""}}, "/api/kit/history": {"get": {"operationId": "api_kit_history", "permission": "check.read", "summary": ""}}, "/api/ctp": {"post": {"operationId": "api_ctp", "permission": "ctp.read", "summary": ""}}, "/api/ctp/history": {"get": {"operationId": "api_ctp_history", "permission": "ctp.read", "summary": ""}}, "/api/alerts": {"get": {"operationId": "api_alerts", "permission": "alert.read", "summary": ""}}, "/api/alerts/{param}/handle": {"post": {"operationId": "<lambda>", "permission": "alert.read", "summary": ""}}, "/api/rules": {"get": {"operationId": "api_rules", "permission": "plan.read", "summary": ""}}, "/api/rules/save": {"post": {"operationId": "api_rule_save", "permission": "plan.run", "summary": ""}}, "/api/reports/schedule.csv": {"get": {"operationId": "api_rep_schedule_csv", "permission": "report.read", "summary": ""}}, "/api/reports/load.csv": {"get": {"operationId": "api_rep_load_csv", "permission": "report.read", "summary": ""}}, "/api/logs": {"get": {"operationId": "api_logs", "permission": "system.read", "summary": ""}}, "/api/sync": {"get": {"operationId": "api_sync", "permission": "仅登录", "summary": ""}}, "/api/sync/version": {"get": {"operationId": "api_sync_version", "permission": "仅登录", "summary": ""}}, "/api/api-keys": {"get": {"operationId": "api_keys_list", "permission": "system.read", "summary": ""}}, "/api/api-keys/create": {"post": {"operationId": "api_keys_create", "permission": "system.write", "summary": ""}}, "/api/api-keys/{param}/delete": {"post": {"operationId": "<lambda>", "permission": "system.write", "summary": ""}}}}, "__dayload__": {"WC-ASSY": {"wc": "WC-ASSY", "run_no": "RUN0002", "days": [{"date": "2026-10-23", "capacity": 8.0, "load": 0.0}, {"date": "2026-10-24", "capacity": 0.0, "load": 0.0}, {"date": "2026-10-25", "capacity": 0.0, "load": 0.0}, {"date": "2026-10-26", "capacity": 8.0, "load": 8.0}, {"date": "2026-10-27", "capacity": 8.0, "load": 8.0}, {"date": "2026-10-28", "capacity": 8.0, "load": 8.0}, {"date": "2026-10-29", "capacity": 8.0, "load": 8.0}, {"date": "2026-10-30", "capacity": 8.0, "load": 8.0}, {"date": "2026-10-31", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-01", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-02", "capacity": 8.0, "load": 8.0}, {"date": "2026-11-03", "capacity": 8.0, "load": 8.0}, {"date": "2026-11-04", "capacity": 8.0, "load": 8.0}, {"date": "2026-11-05", "capacity": 8.0, "load": 8.0}, {"date": "2026-11-06", "capacity": 8.0, "load": 8.0}, {"date": "2026-11-07", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-08", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-09", "capacity": 8.0, "load": 8.0}, {"date": "2026-11-10", "capacity": 8.0, "load": 8.0}, {"date": "2026-11-11", "capacity": 8.0, "load": 0.0}, {"date": "2026-11-12", "capacity": 8.0, "load": 0.0}, {"date": "2026-11-13", "capacity": 8.0, "load": 0.0}, {"date": "2026-11-14", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-15", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-16", "capacity": 8.0, "load": 0.0}, {"date": "2026-11-17", "capacity": 8.0, "load": 0.0}, {"date": "2026-11-18", "capacity": 8.0, "load": 0.0}, {"date": "2026-11-19", "capacity": 8.0, "load": 0.0}, {"date": "2026-11-20", "capacity": 8.0, "load": 0.0}, {"date": "2026-11-21", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-22", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-23", "capacity": 8.0, "load": 0.0}, {"date": "2026-11-24", "capacity": 8.0, "load": 0.0}, {"date": "2026-11-25", "capacity": 8.0, "load": 0.0}, {"date": "2026-11-26", "capacity": 8.0, "load": 0.0}, {"date": "2026-11-27", "capacity": 8.0, "load": 0.0}, {"date": "2026-11-28", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-29", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-30", "capacity": 8.0, "load": 0.0}, {"date": "2026-12-01", "capacity": 8.0, "load": 0.0}, {"date": "2026-12-02", "capacity": 8.0, "load": 0.0}, {"date": "2026-12-03", "capacity": 8.0, "load": 0.0}, {"date": "2026-12-04", "capacity": 8.0, "load": 0.0}, {"date": "2026-12-05", "capacity": 0.0, "load": 0.0}, {"date": "2026-12-06", "capacity": 0.0, "load": 0.0}, {"date": "2026-12-07", "capacity": 8.0, "load": 0.0}, {"date": "2026-12-08", "capacity": 8.0, "load": 0.0}, {"date": "2026-12-09", "capacity": 8.0, "load": 0.0}, {"date": "2026-12-10", "capacity": 8.0, "load": 0.0}, {"date": "2026-12-11", "capacity": 8.0, "load": 0.0}, {"date": "2026-12-12", "capacity": 0.0, "load": 0.0}, {"date": "2026-12-13", "capacity": 0.0, "load": 0.0}, {"date": "2026-12-14", "capacity": 8.0, "load": 0.0}, {"date": "2026-12-15", "capacity": 8.0, "load": 0.0}, {"date": "2026-12-16", "capacity": 8.0, "load": 0.0}, {"date": "2026-12-17", "capacity": 8.0, "load": 0.0}, {"date": "2026-12-18", "capacity": 8.0, "load": 0.0}, {"date": "2026-12-19", "capacity": 0.0, "load": 0.0}, {"date": "2026-12-20", "capacity": 0.0, "load": 0.0}, {"date": "2026-12-21", "capacity": 8.0, "load": 0.0}, {"date": "2026-12-22", "capacity": 8.0, "load": 0.0}, {"date": "2026-12-23", "capacity": 8.0, "load": 0.0}, {"date": "2026-12-24", "capacity": 8.0, "load": 0.0}, {"date": "2026-12-25", "capacity": 8.0, "load": 0.0}, {"date": "2026-12-26", "capacity": 0.0, "load": 0.0}, {"date": "2026-12-27", "capacity": 0.0, "load": 0.0}, {"date": "2026-12-28", "capacity": 8.0, "load": 0.0}, {"date": "2026-12-29", "capacity": 8.0, "load": 0.0}, {"date": "2026-12-30", "capacity": 8.0, "load": 0.0}, {"date": "2026-12-31", "capacity": 8.0, "load": 0.0}, {"date": "2027-01-01", "capacity": 8.0, "load": 0.0}, {"date": "2027-01-02", "capacity": 0.0, "load": 0.0}, {"date": "2027-01-03", "capacity": 0.0, "load": 0.0}, {"date": "2027-01-04", "capacity": 8.0, "load": 0.0}, {"date": "2027-01-05", "capacity": 8.0, "load": 0.0}, {"date": "2027-01-06", "capacity": 8.0, "load": 0.0}, {"date": "2027-01-07", "capacity": 8.0, "load": 0.0}, {"date": "2027-01-08", "capacity": 8.0, "load": 0.0}, {"date": "2027-01-09", "capacity": 0.0, "load": 0.0}, {"date": "2027-01-10", "capacity": 0.0, "load": 0.0}, {"date": "2027-01-11", "capacity": 8.0, "load": 0.0}, {"date": "2027-01-12", "capacity": 8.0, "load": 0.0}, {"date": "2027-01-13", "capacity": 8.0, "load": 0.0}, {"date": "2027-01-14", "capacity": 8.0, "load": 0.0}, {"date": "2027-01-15", "capacity": 8.0, "load": 0.0}, {"date": "2027-01-16", "capacity": 0.0, "load": 0.0}, {"date": "2027-01-17", "capacity": 0.0, "load": 0.0}, {"date": "2027-01-18", "capacity": 8.0, "load": 0.0}, {"date": "2027-01-19", "capacity": 8.0, "load": 0.0}, {"date": "2027-01-20", "capacity": 8.0, "load": 0.0}], "total_load": 96.0, "total_cap": 512.0}, "WC-CNC1": {"wc": "WC-CNC1", "run_no": "RUN0002", "days": [{"date": "2026-10-23", "capacity": 16.0, "load": 16.0}, {"date": "2026-10-24", "capacity": 0.0, "load": 0.0}, {"date": "2026-10-25", "capacity": 0.0, "load": 0.0}, {"date": "2026-10-26", "capacity": 16.0, "load": 16.0}, {"date": "2026-10-27", "capacity": 16.0, "load": 16.0}, {"date": "2026-10-28", "capacity": 16.0, "load": 16.0}, {"date": "2026-10-29", "capacity": 16.0, "load": 16.0}, {"date": "2026-10-30", "capacity": 16.0, "load": 16.0}, {"date": "2026-10-31", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-01", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-02", "capacity": 16.0, "load": 16.0}, {"date": "2026-11-03", "capacity": 16.0, "load": 2.8}, {"date": "2026-11-04", "capacity": 16.0, "load": 0.0}, {"date": "2026-11-05", "capacity": 16.0, "load": 0.0}, {"date": "2026-11-06", "capacity": 16.0, "load": 0.0}, {"date": "2026-11-07", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-08", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-09", "capacity": 16.0, "load": 0.0}, {"date": "2026-11-10", "capacity": 16.0, "load": 0.0}, {"date": "2026-11-11", "capacity": 16.0, "load": 0.0}, {"date": "2026-11-12", "capacity": 16.0, "load": 0.0}, {"date": "2026-11-13", "capacity": 16.0, "load": 0.0}, {"date": "2026-11-14", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-15", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-16", "capacity": 16.0, "load": 0.0}, {"date": "2026-11-17", "capacity": 16.0, "load": 0.0}, {"date": "2026-11-18", "capacity": 16.0, "load": 0.0}, {"date": "2026-11-19", "capacity": 16.0, "load": 0.0}, {"date": "2026-11-20", "capacity": 16.0, "load": 0.0}, {"date": "2026-11-21", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-22", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-23", "capacity": 16.0, "load": 0.0}, {"date": "2026-11-24", "capacity": 16.0, "load": 0.0}, {"date": "2026-11-25", "capacity": 16.0, "load": 0.0}, {"date": "2026-11-26", "capacity": 16.0, "load": 0.0}, {"date": "2026-11-27", "capacity": 16.0, "load": 0.0}, {"date": "2026-11-28", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-29", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-30", "capacity": 16.0, "load": 0.0}, {"date": "2026-12-01", "capacity": 16.0, "load": 0.0}, {"date": "2026-12-02", "capacity": 16.0, "load": 0.0}, {"date": "2026-12-03", "capacity": 16.0, "load": 0.0}, {"date": "2026-12-04", "capacity": 16.0, "load": 0.0}, {"date": "2026-12-05", "capacity": 0.0, "load": 0.0}, {"date": "2026-12-06", "capacity": 0.0, "load": 0.0}, {"date": "2026-12-07", "capacity": 16.0, "load": 0.0}, {"date": "2026-12-08", "capacity": 16.0, "load": 0.0}, {"date": "2026-12-09", "capacity": 16.0, "load": 0.0}, {"date": "2026-12-10", "capacity": 16.0, "load": 0.0}, {"date": "2026-12-11", "capacity": 16.0, "load": 0.0}, {"date": "2026-12-12", "capacity": 0.0, "load": 0.0}, {"date": "2026-12-13", "capacity": 0.0, "load": 0.0}, {"date": "2026-12-14", "capacity": 16.0, "load": 0.0}, {"date": "2026-12-15", "capacity": 16.0, "load": 0.0}, {"date": "2026-12-16", "capacity": 16.0, "load": 0.0}, {"date": "2026-12-17", "capacity": 16.0, "load": 0.0}, {"date": "2026-12-18", "capacity": 16.0, "load": 0.0}, {"date": "2026-12-19", "capacity": 0.0, "load": 0.0}, {"date": "2026-12-20", "capacity": 0.0, "load": 0.0}, {"date": "2026-12-21", "capacity": 16.0, "load": 0.0}, {"date": "2026-12-22", "capacity": 16.0, "load": 0.0}, {"date": "2026-12-23", "capacity": 16.0, "load": 0.0}, {"date": "2026-12-24", "capacity": 16.0, "load": 0.0}, {"date": "2026-12-25", "capacity": 16.0, "load": 0.0}, {"date": "2026-12-26", "capacity": 0.0, "load": 0.0}, {"date": "2026-12-27", "capacity": 0.0, "load": 0.0}, {"date": "2026-12-28", "capacity": 16.0, "load": 0.0}, {"date": "2026-12-29", "capacity": 16.0, "load": 0.0}, {"date": "2026-12-30", "capacity": 16.0, "load": 0.0}, {"date": "2026-12-31", "capacity": 16.0, "load": 0.0}, {"date": "2027-01-01", "capacity": 16.0, "load": 0.0}, {"date": "2027-01-02", "capacity": 0.0, "load": 0.0}, {"date": "2027-01-03", "capacity": 0.0, "load": 0.0}, {"date": "2027-01-04", "capacity": 16.0, "load": 0.0}, {"date": "2027-01-05", "capacity": 16.0, "load": 0.0}, {"date": "2027-01-06", "capacity": 16.0, "load": 0.0}, {"date": "2027-01-07", "capacity": 16.0, "load": 0.0}, {"date": "2027-01-08", "capacity": 16.0, "load": 0.0}, {"date": "2027-01-09", "capacity": 0.0, "load": 0.0}, {"date": "2027-01-10", "capacity": 0.0, "load": 0.0}, {"date": "2027-01-11", "capacity": 16.0, "load": 0.0}, {"date": "2027-01-12", "capacity": 16.0, "load": 0.0}, {"date": "2027-01-13", "capacity": 16.0, "load": 0.0}, {"date": "2027-01-14", "capacity": 16.0, "load": 0.0}, {"date": "2027-01-15", "capacity": 16.0, "load": 0.0}, {"date": "2027-01-16", "capacity": 0.0, "load": 0.0}, {"date": "2027-01-17", "capacity": 0.0, "load": 0.0}, {"date": "2027-01-18", "capacity": 16.0, "load": 0.0}, {"date": "2027-01-19", "capacity": 16.0, "load": 0.0}, {"date": "2027-01-20", "capacity": 16.0, "load": 0.0}], "total_load": 114.8, "total_cap": 1024.0}, "WC-CNC2": {"wc": "WC-CNC2", "run_no": "RUN0002", "days": [{"date": "2026-10-23", "capacity": 6.0, "load": 6.0}, {"date": "2026-10-24", "capacity": 0.0, "load": 0.0}, {"date": "2026-10-25", "capacity": 0.0, "load": 0.0}, {"date": "2026-10-26", "capacity": 6.0, "load": 6.0}, {"date": "2026-10-27", "capacity": 6.0, "load": 6.0}, {"date": "2026-10-28", "capacity": 6.0, "load": 6.0}, {"date": "2026-10-29", "capacity": 6.0, "load": 6.0}, {"date": "2026-10-30", "capacity": 6.0, "load": 6.0}, {"date": "2026-10-31", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-01", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-02", "capacity": 6.0, "load": 2.0}, {"date": "2026-11-03", "capacity": 6.0, "load": 0.0}, {"date": "2026-11-04", "capacity": 6.0, "load": 0.0}, {"date": "2026-11-05", "capacity": 6.0, "load": 6.0}, {"date": "2026-11-06", "capacity": 6.0, "load": 0.5}, {"date": "2026-11-07", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-08", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-09", "capacity": 6.0, "load": 0.0}, {"date": "2026-11-10", "capacity": 6.0, "load": 0.0}, {"date": "2026-11-11", "capacity": 6.0, "load": 0.0}, {"date": "2026-11-12", "capacity": 6.0, "load": 0.0}, {"date": "2026-11-13", "capacity": 6.0, "load": 0.0}, {"date": "2026-11-14", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-15", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-16", "capacity": 6.0, "load": 0.0}, {"date": "2026-11-17", "capacity": 6.0, "load": 0.0}, {"date": "2026-11-18", "capacity": 6.0, "load": 0.0}, {"date": "2026-11-19", "capacity": 6.0, "load": 0.0}, {"date": "2026-11-20", "capacity": 6.0, "load": 0.0}, {"date": "2026-11-21", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-22", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-23", "capacity": 6.0, "load": 0.0}, {"date": "2026-11-24", "capacity": 6.0, "load": 0.0}, {"date": "2026-11-25", "capacity": 6.0, "load": 0.0}, {"date": "2026-11-26", "capacity": 6.0, "load": 0.0}, {"date": "2026-11-27", "capacity": 6.0, "load": 0.0}, {"date": "2026-11-28", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-29", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-30", "capacity": 6.0, "load": 0.0}, {"date": "2026-12-01", "capacity": 6.0, "load": 0.0}, {"date": "2026-12-02", "capacity": 6.0, "load": 0.0}, {"date": "2026-12-03", "capacity": 6.0, "load": 0.0}, {"date": "2026-12-04", "capacity": 6.0, "load": 0.0}, {"date": "2026-12-05", "capacity": 0.0, "load": 0.0}, {"date": "2026-12-06", "capacity": 0.0, "load": 0.0}, {"date": "2026-12-07", "capacity": 6.0, "load": 0.0}, {"date": "2026-12-08", "capacity": 6.0, "load": 0.0}, {"date": "2026-12-09", "capacity": 6.0, "load": 0.0}, {"date": "2026-12-10", "capacity": 6.0, "load": 0.0}, {"date": "2026-12-11", "capacity": 6.0, "load": 0.0}, {"date": "2026-12-12", "capacity": 0.0, "load": 0.0}, {"date": "2026-12-13", "capacity": 0.0, "load": 0.0}, {"date": "2026-12-14", "capacity": 6.0, "load": 0.0}, {"date": "2026-12-15", "capacity": 6.0, "load": 0.0}, {"date": "2026-12-16", "capacity": 6.0, "load": 0.0}, {"date": "2026-12-17", "capacity": 6.0, "load": 0.0}, {"date": "2026-12-18", "capacity": 6.0, "load": 0.0}, {"date": "2026-12-19", "capacity": 0.0, "load": 0.0}, {"date": "2026-12-20", "capacity": 0.0, "load": 0.0}, {"date": "2026-12-21", "capacity": 6.0, "load": 0.0}, {"date": "2026-12-22", "capacity": 6.0, "load": 0.0}, {"date": "2026-12-23", "capacity": 6.0, "load": 0.0}, {"date": "2026-12-24", "capacity": 6.0, "load": 0.0}, {"date": "2026-12-25", "capacity": 6.0, "load": 0.0}, {"date": "2026-12-26", "capacity": 0.0, "load": 0.0}, {"date": "2026-12-27", "capacity": 0.0, "load": 0.0}, {"date": "2026-12-28", "capacity": 6.0, "load": 0.0}, {"date": "2026-12-29", "capacity": 6.0, "load": 0.0}, {"date": "2026-12-30", "capacity": 6.0, "load": 0.0}, {"date": "2026-12-31", "capacity": 6.0, "load": 0.0}, {"date": "2027-01-01", "capacity": 6.0, "load": 0.0}, {"date": "2027-01-02", "capacity": 0.0, "load": 0.0}, {"date": "2027-01-03", "capacity": 0.0, "load": 0.0}, {"date": "2027-01-04", "capacity": 6.0, "load": 0.0}, {"date": "2027-01-05", "capacity": 6.0, "load": 0.0}, {"date": "2027-01-06", "capacity": 6.0, "load": 0.0}, {"date": "2027-01-07", "capacity": 6.0, "load": 0.0}, {"date": "2027-01-08", "capacity": 6.0, "load": 0.0}, {"date": "2027-01-09", "capacity": 0.0, "load": 0.0}, {"date": "2027-01-10", "capacity": 0.0, "load": 0.0}, {"date": "2027-01-11", "capacity": 6.0, "load": 0.0}, {"date": "2027-01-12", "capacity": 6.0, "load": 0.0}, {"date": "2027-01-13", "capacity": 6.0, "load": 0.0}, {"date": "2027-01-14", "capacity": 6.0, "load": 0.0}, {"date": "2027-01-15", "capacity": 6.0, "load": 0.0}, {"date": "2027-01-16", "capacity": 0.0, "load": 0.0}, {"date": "2027-01-17", "capacity": 0.0, "load": 0.0}, {"date": "2027-01-18", "capacity": 6.0, "load": 0.0}, {"date": "2027-01-19", "capacity": 6.0, "load": 0.0}, {"date": "2027-01-20", "capacity": 6.0, "load": 0.0}], "total_load": 44.5, "total_cap": 384.0}, "WC-PAINT": {"wc": "WC-PAINT", "run_no": "RUN0002", "days": [{"date": "2026-10-23", "capacity": 7.2, "load": 0.0}, {"date": "2026-10-24", "capacity": 0.0, "load": 0.0}, {"date": "2026-10-25", "capacity": 0.0, "load": 0.0}, {"date": "2026-10-26", "capacity": 7.2, "load": 4.0}, {"date": "2026-10-27", "capacity": 7.2, "load": 0.0}, {"date": "2026-10-28", "capacity": 7.2, "load": 7.2}, {"date": "2026-10-29", "capacity": 7.2, "load": 7.2}, {"date": "2026-10-30", "capacity": 7.2, "load": 2.1}, {"date": "2026-10-31", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-01", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-02", "capacity": 7.2, "load": 0.0}, {"date": "2026-11-03", "capacity": 7.2, "load": 0.0}, {"date": "2026-11-04", "capacity": 7.2, "load": 0.0}, {"date": "2026-11-05", "capacity": 7.2, "load": 0.0}, {"date": "2026-11-06", "capacity": 7.2, "load": 0.0}, {"date": "2026-11-07", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-08", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-09", "capacity": 7.2, "load": 0.0}, {"date": "2026-11-10", "capacity": 7.2, "load": 0.0}, {"date": "2026-11-11", "capacity": 7.2, "load": 0.0}, {"date": "2026-11-12", "capacity": 7.2, "load": 0.0}, {"date": "2026-11-13", "capacity": 7.2, "load": 0.0}, {"date": "2026-11-14", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-15", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-16", "capacity": 7.2, "load": 0.0}, {"date": "2026-11-17", "capacity": 7.2, "load": 0.0}, {"date": "2026-11-18", "capacity": 7.2, "load": 0.0}, {"date": "2026-11-19", "capacity": 7.2, "load": 0.0}, {"date": "2026-11-20", "capacity": 7.2, "load": 0.0}, {"date": "2026-11-21", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-22", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-23", "capacity": 7.2, "load": 0.0}, {"date": "2026-11-24", "capacity": 7.2, "load": 0.0}, {"date": "2026-11-25", "capacity": 7.2, "load": 0.0}, {"date": "2026-11-26", "capacity": 7.2, "load": 0.0}, {"date": "2026-11-27", "capacity": 7.2, "load": 0.0}, {"date": "2026-11-28", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-29", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-30", "capacity": 7.2, "load": 0.0}, {"date": "2026-12-01", "capacity": 7.2, "load": 0.0}, {"date": "2026-12-02", "capacity": 7.2, "load": 0.0}, {"date": "2026-12-03", "capacity": 7.2, "load": 0.0}, {"date": "2026-12-04", "capacity": 7.2, "load": 0.0}, {"date": "2026-12-05", "capacity": 0.0, "load": 0.0}, {"date": "2026-12-06", "capacity": 0.0, "load": 0.0}, {"date": "2026-12-07", "capacity": 7.2, "load": 0.0}, {"date": "2026-12-08", "capacity": 7.2, "load": 0.0}, {"date": "2026-12-09", "capacity": 7.2, "load": 0.0}, {"date": "2026-12-10", "capacity": 7.2, "load": 0.0}, {"date": "2026-12-11", "capacity": 7.2, "load": 0.0}, {"date": "2026-12-12", "capacity": 0.0, "load": 0.0}, {"date": "2026-12-13", "capacity": 0.0, "load": 0.0}, {"date": "2026-12-14", "capacity": 7.2, "load": 0.0}, {"date": "2026-12-15", "capacity": 7.2, "load": 0.0}, {"date": "2026-12-16", "capacity": 7.2, "load": 0.0}, {"date": "2026-12-17", "capacity": 7.2, "load": 0.0}, {"date": "2026-12-18", "capacity": 7.2, "load": 0.0}, {"date": "2026-12-19", "capacity": 0.0, "load": 0.0}, {"date": "2026-12-20", "capacity": 0.0, "load": 0.0}, {"date": "2026-12-21", "capacity": 7.2, "load": 0.0}, {"date": "2026-12-22", "capacity": 7.2, "load": 0.0}, {"date": "2026-12-23", "capacity": 7.2, "load": 0.0}, {"date": "2026-12-24", "capacity": 7.2, "load": 0.0}, {"date": "2026-12-25", "capacity": 7.2, "load": 0.0}, {"date": "2026-12-26", "capacity": 0.0, "load": 0.0}, {"date": "2026-12-27", "capacity": 0.0, "load": 0.0}, {"date": "2026-12-28", "capacity": 7.2, "load": 0.0}, {"date": "2026-12-29", "capacity": 7.2, "load": 0.0}, {"date": "2026-12-30", "capacity": 7.2, "load": 0.0}, {"date": "2026-12-31", "capacity": 7.2, "load": 0.0}, {"date": "2027-01-01", "capacity": 7.2, "load": 0.0}, {"date": "2027-01-02", "capacity": 0.0, "load": 0.0}, {"date": "2027-01-03", "capacity": 0.0, "load": 0.0}, {"date": "2027-01-04", "capacity": 7.2, "load": 0.0}, {"date": "2027-01-05", "capacity": 7.2, "load": 0.0}, {"date": "2027-01-06", "capacity": 7.2, "load": 0.0}, {"date": "2027-01-07", "capacity": 7.2, "load": 0.0}, {"date": "2027-01-08", "capacity": 7.2, "load": 0.0}, {"date": "2027-01-09", "capacity": 0.0, "load": 0.0}, {"date": "2027-01-10", "capacity": 0.0, "load": 0.0}, {"date": "2027-01-11", "capacity": 7.2, "load": 0.0}, {"date": "2027-01-12", "capacity": 7.2, "load": 0.0}, {"date": "2027-01-13", "capacity": 7.2, "load": 0.0}, {"date": "2027-01-14", "capacity": 7.2, "load": 0.0}, {"date": "2027-01-15", "capacity": 7.2, "load": 0.0}, {"date": "2027-01-16", "capacity": 0.0, "load": 0.0}, {"date": "2027-01-17", "capacity": 0.0, "load": 0.0}, {"date": "2027-01-18", "capacity": 7.2, "load": 0.0}, {"date": "2027-01-19", "capacity": 7.2, "load": 0.0}, {"date": "2027-01-20", "capacity": 7.2, "load": 0.0}], "total_load": 20.5, "total_cap": 460.8}, "WC-QC": {"wc": "WC-QC", "run_no": "RUN0002", "days": [{"date": "2026-10-23", "capacity": 8.0, "load": 0.0}, {"date": "2026-10-24", "capacity": 0.0, "load": 0.0}, {"date": "2026-10-25", "capacity": 0.0, "load": 0.0}, {"date": "2026-10-26", "capacity": 8.0, "load": 2.2}, {"date": "2026-10-27", "capacity": 8.0, "load": 0.0}, {"date": "2026-10-28", "capacity": 8.0, "load": 2.0}, {"date": "2026-10-29", "capacity": 8.0, "load": 3.5}, {"date": "2026-10-30", "capacity": 8.0, "load": 0.0}, {"date": "2026-10-31", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-01", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-02", "capacity": 8.0, "load": 0.0}, {"date": "2026-11-03", "capacity": 8.0, "load": 3.4}, {"date": "2026-11-04", "capacity": 8.0, "load": 0.0}, {"date": "2026-11-05", "capacity": 8.0, "load": 0.0}, {"date": "2026-11-06", "capacity": 8.0, "load": 3.0}, {"date": "2026-11-07", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-08", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-09", "capacity": 8.0, "load": 0.0}, {"date": "2026-11-10", "capacity": 8.0, "load": 4.4}, {"date": "2026-11-11", "capacity": 8.0, "load": 0.0}, {"date": "2026-11-12", "capacity": 8.0, "load": 0.0}, {"date": "2026-11-13", "capacity": 8.0, "load": 0.0}, {"date": "2026-11-14", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-15", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-16", "capacity": 8.0, "load": 0.0}, {"date": "2026-11-17", "capacity": 8.0, "load": 0.0}, {"date": "2026-11-18", "capacity": 8.0, "load": 0.0}, {"date": "2026-11-19", "capacity": 8.0, "load": 0.0}, {"date": "2026-11-20", "capacity": 8.0, "load": 0.0}, {"date": "2026-11-21", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-22", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-23", "capacity": 8.0, "load": 0.0}, {"date": "2026-11-24", "capacity": 8.0, "load": 0.0}, {"date": "2026-11-25", "capacity": 8.0, "load": 0.0}, {"date": "2026-11-26", "capacity": 8.0, "load": 0.0}, {"date": "2026-11-27", "capacity": 8.0, "load": 0.0}, {"date": "2026-11-28", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-29", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-30", "capacity": 8.0, "load": 0.0}, {"date": "2026-12-01", "capacity": 8.0, "load": 0.0}, {"date": "2026-12-02", "capacity": 8.0, "load": 0.0}, {"date": "2026-12-03", "capacity": 8.0, "load": 0.0}, {"date": "2026-12-04", "capacity": 8.0, "load": 0.0}, {"date": "2026-12-05", "capacity": 0.0, "load": 0.0}, {"date": "2026-12-06", "capacity": 0.0, "load": 0.0}, {"date": "2026-12-07", "capacity": 8.0, "load": 0.0}, {"date": "2026-12-08", "capacity": 8.0, "load": 0.0}, {"date": "2026-12-09", "capacity": 8.0, "load": 0.0}, {"date": "2026-12-10", "capacity": 8.0, "load": 0.0}, {"date": "2026-12-11", "capacity": 8.0, "load": 0.0}, {"date": "2026-12-12", "capacity": 0.0, "load": 0.0}, {"date": "2026-12-13", "capacity": 0.0, "load": 0.0}, {"date": "2026-12-14", "capacity": 8.0, "load": 0.0}, {"date": "2026-12-15", "capacity": 8.0, "load": 0.0}, {"date": "2026-12-16", "capacity": 8.0, "load": 0.0}, {"date": "2026-12-17", "capacity": 8.0, "load": 0.0}, {"date": "2026-12-18", "capacity": 8.0, "load": 0.0}, {"date": "2026-12-19", "capacity": 0.0, "load": 0.0}, {"date": "2026-12-20", "capacity": 0.0, "load": 0.0}, {"date": "2026-12-21", "capacity": 8.0, "load": 0.0}, {"date": "2026-12-22", "capacity": 8.0, "load": 0.0}, {"date": "2026-12-23", "capacity": 8.0, "load": 0.0}, {"date": "2026-12-24", "capacity": 8.0, "load": 0.0}, {"date": "2026-12-25", "capacity": 8.0, "load": 0.0}, {"date": "2026-12-26", "capacity": 0.0, "load": 0.0}, {"date": "2026-12-27", "capacity": 0.0, "load": 0.0}, {"date": "2026-12-28", "capacity": 8.0, "load": 0.0}, {"date": "2026-12-29", "capacity": 8.0, "load": 0.0}, {"date": "2026-12-30", "capacity": 8.0, "load": 0.0}, {"date": "2026-12-31", "capacity": 8.0, "load": 0.0}, {"date": "2027-01-01", "capacity": 8.0, "load": 0.0}, {"date": "2027-01-02", "capacity": 0.0, "load": 0.0}, {"date": "2027-01-03", "capacity": 0.0, "load": 0.0}, {"date": "2027-01-04", "capacity": 8.0, "load": 0.0}, {"date": "2027-01-05", "capacity": 8.0, "load": 0.0}, {"date": "2027-01-06", "capacity": 8.0, "load": 0.0}, {"date": "2027-01-07", "capacity": 8.0, "load": 0.0}, {"date": "2027-01-08", "capacity": 8.0, "load": 0.0}, {"date": "2027-01-09", "capacity": 0.0, "load": 0.0}, {"date": "2027-01-10", "capacity": 0.0, "load": 0.0}, {"date": "2027-01-11", "capacity": 8.0, "load": 0.0}, {"date": "2027-01-12", "capacity": 8.0, "load": 0.0}, {"date": "2027-01-13", "capacity": 8.0, "load": 0.0}, {"date": "2027-01-14", "capacity": 8.0, "load": 0.0}, {"date": "2027-01-15", "capacity": 8.0, "load": 0.0}, {"date": "2027-01-16", "capacity": 0.0, "load": 0.0}, {"date": "2027-01-17", "capacity": 0.0, "load": 0.0}, {"date": "2027-01-18", "capacity": 8.0, "load": 0.0}, {"date": "2027-01-19", "capacity": 8.0, "load": 0.0}, {"date": "2027-01-20", "capacity": 8.0, "load": 0.0}], "total_load": 18.5, "total_cap": 512.0}, "WC-WELD": {"wc": "WC-WELD", "run_no": "RUN0002", "days": [{"date": "2026-10-23", "capacity": 7.6, "load": 7.6}, {"date": "2026-10-24", "capacity": 7.6, "load": 0.4}, {"date": "2026-10-25", "capacity": 0.0, "load": 0.0}, {"date": "2026-10-26", "capacity": 7.6, "load": 0.0}, {"date": "2026-10-27", "capacity": 7.6, "load": 7.6}, {"date": "2026-10-28", "capacity": 7.6, "load": 5.4}, {"date": "2026-10-29", "capacity": 7.6, "load": 0.0}, {"date": "2026-10-30", "capacity": 7.6, "load": 7.6}, {"date": "2026-10-31", "capacity": 7.6, "load": 7.6}, {"date": "2026-11-01", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-02", "capacity": 7.6, "load": 7.6}, {"date": "2026-11-03", "capacity": 7.6, "load": 7.6}, {"date": "2026-11-04", "capacity": 7.6, "load": 1.6}, {"date": "2026-11-05", "capacity": 7.6, "load": 0.0}, {"date": "2026-11-06", "capacity": 7.6, "load": 0.0}, {"date": "2026-11-07", "capacity": 7.6, "load": 0.0}, {"date": "2026-11-08", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-09", "capacity": 7.6, "load": 0.0}, {"date": "2026-11-10", "capacity": 7.6, "load": 0.0}, {"date": "2026-11-11", "capacity": 7.6, "load": 0.0}, {"date": "2026-11-12", "capacity": 7.6, "load": 0.0}, {"date": "2026-11-13", "capacity": 7.6, "load": 0.0}, {"date": "2026-11-14", "capacity": 7.6, "load": 0.0}, {"date": "2026-11-15", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-16", "capacity": 7.6, "load": 0.0}, {"date": "2026-11-17", "capacity": 7.6, "load": 0.0}, {"date": "2026-11-18", "capacity": 7.6, "load": 0.0}, {"date": "2026-11-19", "capacity": 7.6, "load": 0.0}, {"date": "2026-11-20", "capacity": 7.6, "load": 0.0}, {"date": "2026-11-21", "capacity": 7.6, "load": 0.0}, {"date": "2026-11-22", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-23", "capacity": 7.6, "load": 0.0}, {"date": "2026-11-24", "capacity": 7.6, "load": 0.0}, {"date": "2026-11-25", "capacity": 7.6, "load": 0.0}, {"date": "2026-11-26", "capacity": 7.6, "load": 0.0}, {"date": "2026-11-27", "capacity": 7.6, "load": 0.0}, {"date": "2026-11-28", "capacity": 7.6, "load": 0.0}, {"date": "2026-11-29", "capacity": 0.0, "load": 0.0}, {"date": "2026-11-30", "capacity": 7.6, "load": 0.0}, {"date": "2026-12-01", "capacity": 7.6, "load": 0.0}, {"date": "2026-12-02", "capacity": 7.6, "load": 0.0}, {"date": "2026-12-03", "capacity": 7.6, "load": 0.0}, {"date": "2026-12-04", "capacity": 7.6, "load": 0.0}, {"date": "2026-12-05", "capacity": 7.6, "load": 0.0}, {"date": "2026-12-06", "capacity": 0.0, "load": 0.0}, {"date": "2026-12-07", "capacity": 7.6, "load": 0.0}, {"date": "2026-12-08", "capacity": 7.6, "load": 0.0}, {"date": "2026-12-09", "capacity": 7.6, "load": 0.0}, {"date": "2026-12-10", "capacity": 7.6, "load": 0.0}, {"date": "2026-12-11", "capacity": 7.6, "load": 0.0}, {"date": "2026-12-12", "capacity": 7.6, "load": 0.0}, {"date": "2026-12-13", "capacity": 0.0, "load": 0.0}, {"date": "2026-12-14", "capacity": 7.6, "load": 0.0}, {"date": "2026-12-15", "capacity": 7.6, "load": 0.0}, {"date": "2026-12-16", "capacity": 7.6, "load": 0.0}, {"date": "2026-12-17", "capacity": 7.6, "load": 0.0}, {"date": "2026-12-18", "capacity": 7.6, "load": 0.0}, {"date": "2026-12-19", "capacity": 7.6, "load": 0.0}, {"date": "2026-12-20", "capacity": 0.0, "load": 0.0}, {"date": "2026-12-21", "capacity": 7.6, "load": 0.0}, {"date": "2026-12-22", "capacity": 7.6, "load": 0.0}, {"date": "2026-12-23", "capacity": 7.6, "load": 0.0}, {"date": "2026-12-24", "capacity": 7.6, "load": 0.0}, {"date": "2026-12-25", "capacity": 7.6, "load": 0.0}, {"date": "2026-12-26", "capacity": 7.6, "load": 0.0}, {"date": "2026-12-27", "capacity": 0.0, "load": 0.0}, {"date": "2026-12-28", "capacity": 7.6, "load": 0.0}, {"date": "2026-12-29", "capacity": 7.6, "load": 0.0}, {"date": "2026-12-30", "capacity": 7.6, "load": 0.0}, {"date": "2026-12-31", "capacity": 7.6, "load": 0.0}, {"date": "2027-01-01", "capacity": 7.6, "load": 0.0}, {"date": "2027-01-02", "capacity": 7.6, "load": 0.0}, {"date": "2027-01-03", "capacity": 0.0, "load": 0.0}, {"date": "2027-01-04", "capacity": 7.6, "load": 0.0}, {"date": "2027-01-05", "capacity": 7.6, "load": 0.0}, {"date": "2027-01-06", "capacity": 7.6, "load": 0.0}, {"date": "2027-01-07", "capacity": 7.6, "load": 0.0}, {"date": "2027-01-08", "capacity": 7.6, "load": 0.0}, {"date": "2027-01-09", "capacity": 7.6, "load": 0.0}, {"date": "2027-01-10", "capacity": 0.0, "load": 0.0}, {"date": "2027-01-11", "capacity": 7.6, "load": 0.0}, {"date": "2027-01-12", "capacity": 7.6, "load": 0.0}, {"date": "2027-01-13", "capacity": 7.6, "load": 0.0}, {"date": "2027-01-14", "capacity": 7.6, "load": 0.0}, {"date": "2027-01-15", "capacity": 7.6, "load": 0.0}, {"date": "2027-01-16", "capacity": 7.6, "load": 0.0}, {"date": "2027-01-17", "capacity": 0.0, "load": 0.0}, {"date": "2027-01-18", "capacity": 7.6, "load": 0.0}, {"date": "2027-01-19", "capacity": 7.6, "load": 0.0}, {"date": "2027-01-20", "capacity": 7.6, "load": 0.0}], "total_load": 53.0, "total_cap": 585.2}}, "__ctp__": {"P-BRACKET": {"product": "P-BRACKET", "qty": 5.0, "requested_due": "2026-11-22", "earliest_end": "2026-11-03", "on_time": true, "feasible": true, "late_days": 0, "suggestion": "可按期承诺"}, "P-CONV": {"product": "P-CONV", "qty": 5.0, "requested_due": "2026-11-22", "earliest_end": "2026-11-16", "on_time": true, "feasible": true, "late_days": 0, "suggestion": "可按期承诺"}, "P-FAN": {"product": "P-FAN", "qty": 5.0, "requested_due": "2026-11-22", "earliest_end": "2026-11-11", "on_time": true, "feasible": true, "late_days": 0, "suggestion": "可按期承诺"}}};
+var DEMO = {
+  /* 前端用的 get 兜底：按路径取内置快照 */
+  get: function (path) {
+    var p = path.split('?')[0];
+    if (MOCK[p] !== undefined) return MOCK[p];
+    if (p.indexOf('/api/plan/dayload/') === 0)
+      return MOCK.__dayload__[p.split('/').pop()] || [];
+    return [];
+  },
+  post: function (path, body) {
+    var p = path.split('?')[0];
+    if (p === '/api/ctp') {
+      var d = MOCK.__ctp__[(body || {}).product];
+      if (d) return d;
+      return {product: (body || {}).product, qty: (body || {}).qty,
+              earliest_end: null, on_time: false, feasible: false, late_days: 0,
+              suggestion: 'DEMO 中仅预置了部分产品的 CTP 结果'};
+    }
+    if (p === '/api/plan/run') return MOCK['/api/plan/run'];
+    if (p === '/api/plan/push-in') return {so: 'SO-DEMO', wo: 'WO-DEMO', end: null,
+      late_count: 0, late_wos: [], run_no: MOCK['/api/plan/run'].run_no};
+    if (p === '/api/kit/run') return MOCK['/api/kit/run'];
+    return {ok: true};
+  }
+};
+
+</script>
+<script>
+/* 飞划APS · 框架层 */
+var TOKEN = localStorage.getItem('aps_token') || '';
+var ME = JSON.parse(localStorage.getItem('aps_user') || '{}');
+var PERMS = ME.perms || [];
+
+function api(method, path, body, raw) {
+  /* DEMO：不发请求，直接读内置数据 */
+  if (method === 'POST') return Promise.resolve(DEMO.post(path, body));
+  var _d = DEMO.get(path);
+  return Promise.resolve(raw ? DEMO.csvOf(path) : {code: 200, message: 'ok', data: _d});
+}
+function _apiReal(method, path, body, raw) {
+  return fetch(path, {
+    method: method,
+    headers: Object.assign({'Content-Type': 'application/json'},
+      TOKEN ? {Authorization: 'Bearer ' + TOKEN} : {}),
+    body: method === 'POST' ? JSON.stringify(body || {}) : undefined
+  }).then(function (r) {
+    if (r.status === 401) { localStorage.clear(); location.href = 'login.html'; throw new Error('unauth'); }
+    if (r.status >= 400) {
+      return r.text().then(function (t) {
+        var msg = 'HTTP ' + r.status;
+        try { msg = (JSON.parse(t) || {}).error || msg; } catch (e) { /* 非 JSON 响应 */ }
+        throw new Error(msg);
+      });
+    }
+    return raw ? r.text() : r.json();
+  });
+}
+function GET(p) { return api('GET', p); }
+function POST(p, b) {
+  if (p.indexOf('/save') > 0 || p.indexOf('/delete') > 0 || p.indexOf('/adjust') > 0) {
+    toast('离线 DEMO：写操作已禁用'); 
+    return Promise.resolve({code: 200, data: {ok: true}});
+  }
+  return api('POST', p, b);
+}
+function CSV(p) { return api('GET', p, null, true); }
+
+function toast(msg, err) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = err ? '#d03050' : '#1f2733';
+  t.classList.remove('hidden');
+  clearTimeout(t._tm);
+  t._tm = setTimeout(function () { t.classList.add('hidden'); }, 2600);
+}
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+    return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c];
+  });
+}
+function perm(p) { return PERMS.indexOf('*') >= 0 || PERMS.indexOf(p) >= 0; }
+function fmtPct(x) { return (x * 100).toFixed(1) + '%'; }
+function fmtDate(s) { return s ? String(s).slice(0, 10) : '—'; }
+
+var NAV = [
+  ['dash', '仪表盘', '📊'],
+  ['plan', '排程与甘特', '📅'],
+  ['orders', '销售订单', '🧾'],
+  ['wos', '生产工单', '📋'],
+  ['kit', '物料齐套', '📦'],
+  ['ctp', '交期承诺 CTP', '🤝'],
+  ['master', '主数据', '🗂️'],
+  ['alerts', '告警中心', '🔔'],
+  ['system', '系统管理', '⚙️']
+];
+
+function boot() {
+  TOKEN = TOKEN || 'demo';   /* DEMO：免登录 */
+  GET('/api/auth/me').then(function (j) {
+    ME = j.data; PERMS = ME.perms || [];
+    document.getElementById('who').textContent = ME.name + '·' + ME.roleLabel;
+    var nav = document.getElementById('nav');
+    nav.innerHTML = NAV.map(function (n) {
+      return '<a href="#/' + n[0] + '" data-k="' + n[0] + '">' + n[2] + ' ' + n[1] + '</a>';
+    }).join('');
+    nav.onclick = function (e) {
+      var a = e.target.closest('a'); if (!a) return;
+      e.preventDefault();
+      go(a.getAttribute('data-k'));
+    };
+    var key = (location.hash || '#/dash').replace('#/', '');
+    go(NAV.some(function (n) { return n[0] === key; }) ? key : 'dash');
+    document.getElementById('btn-logout').onclick = function () {
+      toast('离线 DEMO 无登录态，退出不生效');
+    };
+    if (window.__DEMO_BANNER__) document.body.classList.add('demo-mode');
+    window.addEventListener('hashchange', function () {
+      var k = (location.hash || '#/dash').replace('#/', '');
+      if (PAGES[k]) go(k);
+    });
+  }).catch(function (e) { if (e.message !== 'unauth') location.href = 'login.html'; });
+}
+
+var CUR = null;
+function go(key) {
+  CUR = key;
+  location.hash = '#/' + key;
+  document.querySelectorAll('#nav a').forEach(function (a) {
+    a.classList.toggle('on', a.getAttribute('data-k') === key);
+  });
+  var main = document.getElementById('main');
+  main.innerHTML = '<div class="empty">加载中…</div>';
+  /* 页面函数可能同步渲染完毕、不返回 Promise，统一兜底成 Promise */
+  var task;
+  try {
+    task = PAGES[key](main);
+  } catch (e) {
+    task = Promise.reject(e);
+  }
+  Promise.resolve(task).catch(function (e) {
+    if (e && e.message === 'unauth') return;
+    main.innerHTML = '<div class="empty">加载失败：' + esc(e && e.message) + '</div>';
+  });
+}
+
+function modal(html) {
+  var mask = document.getElementById('modal-mask');
+  document.getElementById('modal').innerHTML = html;
+  mask.classList.remove('hidden');
+  mask.onclick = function (e) { if (e.target === mask) closeModal(); };
+}
+function closeModal() { document.getElementById('modal-mask').classList.add('hidden'); }
+
+function table(headers, rows, rowHtml) {
+  return '<table><thead><tr>' + headers.map(function (h) { return '<th>' + h + '</th>'; }).join('') +
+    '</tr></thead><tbody>' + rows.map(rowHtml).join('') + '</tbody></table>';
+}
+
+DEMO.csvOf = function (path) {
+  if (path.indexOf('schedule') >= 0) {
+    var ops = (DEMO.get('/api/plan/latest') || {}).ops || [];
+    return '工单,工序,工作中心,工时(h),开始日,开始时,结束日,结束时\n' +
+      ops.map(function (o) { return [o.wo, o.seq, o.wc, o.hours, o.start_date,
+        o.start_h, o.end_date, o.end_h].join(','); }).join('\n');
+  }
+  var ls = (DEMO.get('/api/plan/load') || {}).loads || [];
+  return '工作中心,名称,可用产能(h),负荷(h),利用率,剩余(h)\n' +
+    ls.map(function (l) { return [l.wc, l.name, l.capacity_h, l.load_h,
+      l.utilization, l.free_h].join(','); }).join('\n');
+};
+
+</script>
+<script>
+/* 飞划APS · 页面层 */
+var PAGES = {};
+
+/* ---------------- 仪表盘 ---------------- */
+PAGES.dash = function (main) {
+  /* 一次 /api/plan/overview 取全看板数据，避免多请求 + 空态 404 噪声 */
+  return Promise.all([GET('/api/health'), GET('/api/alerts'),
+                      GET('/api/plan/overview').catch(function () { return {data: null}; })])
+    .then(function (rs) {
+      var h = rs[0].data, alerts = rs[1].data || [], ov = rs[2] && rs[2].data;
+      var loads = (ov && ov.loads) || [];
+      var latest = ov && ov.run ? ov : null;
+      var pending = alerts.filter(function (a) { return a.status === '未处理'; });
+      var late = latest ? latest.run.late_count : '—';
+      main.innerHTML =
+        '<h2 class="page">仪表盘</h2>' +
+        '<div class="kpis">' +
+        kpi(latest ? latest.run.run_no : '未排程', '最近排程序号') +
+        kpi(h.work_orders, '生产工单') +
+        kpi(late, '迟交工单', late && late !== '—' ? 'err' : '') +
+        kpi(h.sales_orders, '销售订单') +
+        kpi(h.workcenters, '工作中心') +
+        kpi(pending.length, '未处理告警', pending.length ? 'err' : 'ok') +
+        '</div>' +
+        '<div class="card"><h3>工作中心负荷（最近排程）</h3>' +
+        (loads.length ? loads.map(function (l) {
+          var cls = l.utilization > 1 ? 'over' : (l.utilization >= 0.9 ? 'warn' : '');
+          return '<div class="g-row"><div class="g-label">' + esc(l.wc) + ' ' + esc(l.name) +
+            '</div><div class="bar" style="flex:1"><i class="' + cls + '" style="width:' +
+            Math.min(l.utilization * 100, 100) + '%"></i></div>' +
+            '<div style="width:130px;text-align:right;font-size:12px">' + fmtPct(l.utilization) +
+            '（' + l.load_h + 'h/' + l.capacity_h + 'h）</div></div>';
+        }).join('') : '<div class="empty">尚未排程</div>') + '</div>' +
+        '<div class="card"><h3>最新未处理告警</h3>' +
+        (pending.length ? table(['级别', '类型', '对象', '消息', '时间'], pending.slice(0, 8),
+          function (a) {
+            return '<tr><td><span class="tag ' + (a.level === 'high' ? 'err' : 'warn') + '">' +
+              esc(a.level) + '</span></td><td>' + esc(a.atype) + '</td><td>' + esc(a.target) +
+              '</td><td style="white-space:normal">' + esc(a.message) + '</td><td>' + esc(a.created_at) + '</td></tr>';
+          }) : '<div class="empty">无未处理告警 🎉</div>') + '</div>';
+    });
+};
+function kpi(v, t, cls) {
+  return '<div class="kpi"><div class="v ' + (cls || '') + '">' + v + '</div><div class="t">' + t + '</div></div>';
+}
+
+/* ---------------- 排程与甘特 ---------------- */
+PAGES.plan = function (main) {
+  return GET('/api/plan/latest').then(function (j) { render(main, j.data); })
+    .catch(function () { render(main, null); });
+  function render(main, latest) {
+    main.innerHTML =
+      '<h2 class="page">排程与甘特</h2>' +
+      '<div style="color:var(--sub);font-size:12.5px;margin-bottom:10px">' +
+      '有限产能正向排程：按优先规则（EDD 最早交期 / CR 关键比率 / PRIO 优先级 / FIFO 先到先做）' +
+      '把工单工序逐日放入工作中心日产能桶，产出资源甘特图、负荷率与瓶颈、迟交清单。</div>' +
+      '<div class="toolbar">' +
+      (perm('plan.run') ? '<select id="rule"><option>EDD</option><option>CR</option><option>PRIO</option><option>FIFO</option></select>' +
+        '<button class="btn" id="btn-run">▶ 执行排程</button>' +
+        '<button class="btn ghost" id="btn-pushin">⚡ 插单重排</button>' : '') +
+      '<button class="btn ghost" id="btn-csv-s">导出排程CSV</button>' +
+      '<button class="btn ghost" id="btn-csv-l">导出负荷CSV</button>' +
+      '<span class="tag info">' + (latest ? '生效批次 ' + esc(latest.run.run_no) + ' · 规则 ' + esc(latest.run.rule) +
+        ' · 迟交 ' + latest.run.late_count + '/' + latest.run.wo_count : '尚未排程') + '</span></div>' +
+      '<div id="plan-body"></div>';
+    var body = document.getElementById('plan-body');
+    if (latest) draw(body, latest);
+    else body.innerHTML = '<div class="empty">先执行一次排程</div>';
+    var rb = document.getElementById('btn-run');
+    if (rb) rb.onclick = function () {
+      rb.disabled = true;
+      POST('/api/plan/run', {rule: document.getElementById('rule').value}).then(function (j) {
+        toast('排程完成：' + j.data.wo_count + ' 工单，迟交 ' + j.data.late_count);
+        go('plan');
+      }).catch(function (e) { toast(e.message || '排程失败', true); rb.disabled = false; });
+    };
+    var pb = document.getElementById('btn-pushin');
+    if (pb) pb.onclick = pushInModal;
+    document.getElementById('btn-csv-s').onclick = function () { dl('/api/reports/schedule.csv'); };
+    document.getElementById('btn-csv-l').onclick = function () { dl('/api/reports/load.csv'); };
+  }
+  function dl(p) { CSV(p).then(function (t) {
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob(['\ufeff' + t], {type: 'text/csv'}));
+    a.download = p.split('/').pop(); a.click();
+  }); }
+  function draw(el, latest) {
+    var total = latest.run.horizon_days;
+    var start = latest.run.start_date;
+    var d0 = new Date(start + 'T00:00:00');
+    el.innerHTML = '<div class="card"><h3>资源甘特图（' + esc(start) + ' 起 ' + total + ' 天，条上为工单号）</h3><div class="gantt" id="gantt"></div></div>' +
+      '<div class="card"><h3>工单结果</h3><div id="wores"></div></div>';
+    var gt = document.getElementById('gantt');
+    var wcs = Object.keys(latest.ops ? groupBy(latest.ops, 'wc') : {});
+    if (!wcs.length) wcs = Object.keys(latest.loads || {}).length ? [] : [];
+    /* 用 gantt 接口的数据更方便：直接再拉 */
+    GET('/api/plan/gantt').then(function (j) {
+      var g = j.data.by_wc, wos = j.data.work_orders;
+      var html = '';
+      Object.keys(g).sort().forEach(function (wc) {
+        html += '<div style="font-weight:600;margin:8px 0 4px">' + esc(wc) + '</div>';
+        g[wc].forEach(function (o) {
+          var idx = Math.round((new Date(o.start_date + 'T00:00:00') - d0) / 86400000);
+          var len = Math.max(1, Math.round((new Date((o.end_date || o.start_date) + 'T00:00:00') - new Date(o.start_date + 'T00:00:00')) / 86400000) + 1);
+          var wo = wos[o.wo] || {};
+          var late = wo.due_date && o.end_date > wo.due_date;
+          html += '<div class="g-row"><div class="g-label">' + esc(o.wo) + ' #' + o.seq + '</div>' +
+            '<div class="g-track"><div class="g-bar ' + (late ? 'late' : 'ok2') + '" style="left:' +
+            (idx / total * 100) + '%;width:' + Math.min(len / total * 100, 100) + '%" title="' +
+            esc(o.start_date + ' ' + o.start_h + 'h → ' + o.end_date + ' ' + o.end_h + 'h / ' + o.hours + 'h') + '">' +
+            esc(o.wo + ' #' + o.seq + ' ' + o.hours + 'h') + '</div></div></div>';
+        });
+      });
+      gt.innerHTML = html || '<div class="empty">无排程明细</div>';
+      var res = [];
+      Object.keys(g).forEach(function (wc) {
+        g[wc].forEach(function (o) {
+          if (!res.find(function (x) { return x.wo === o.wo; })) res.push({wo: o.wo});
+        });
+      });
+    });
+    /* 工单结果表 */
+    var r0 = latest.ops.length ? latest.ops[0] : null;
+    /* 从 latest.run 的 detail 中提取结果不现实，直接聚合 ops */
+    var byWo = groupBy(latest.ops, 'wo');
+    document.getElementById('wores').innerHTML = table(
+      ['工单', '工序数', '首工序开始', '末工序结束', '状态'],
+      Object.keys(byWo), function (wo) {
+        var ops = byWo[wo];
+        var first = ops[0], last = ops[ops.length - 1];
+        var woMeta = (latest.kit || []).find(function (k) { return k.wo === wo; });
+        var blocked = woMeta && woMeta.kit_ok === false;
+        return '<tr><td>' + esc(wo) + '</td><td>' + ops.length + '</td><td>' +
+          esc(first.start_date) + '</td><td>' + esc(last.end_date) + '</td><td>' +
+          (blocked ? '<span class="tag warn">齐套缺口</span>' : '<span class="tag ok">已排产</span>') +
+          '</td></tr>';
+      });
+  }
+  function groupBy(arr, k) {
+    var m = {};
+    arr.forEach(function (x) { (m[x[k]] = m[x[k]] || []).push(x); });
+    return m;
+  }
+  function pushInModal() {
+    GET('/api/products').then(function (j) {
+      var opts = j.data.map(function (p) {
+        return '<option value="' + esc(p.code) + '">' + esc(p.code) + ' ' + esc(p.name) + '</option>';
+      }).join('');
+      modal('<h3>⚡ 插单重排</h3>' +
+        '<div class="frow"><label>产品</label><select id="pi-prod">' + opts + '</select></div>' +
+        '<div class="frow"><label>数量</label><input id="pi-qty" type="number" value="2" min="1"></div>' +
+        '<div class="frow"><label>交期</label><input id="pi-due" type="date" value="' + new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10) + '"></div>' +
+        '<div class="frow"><label>优先级</label><select id="pi-prio"><option value="1">1 紧急</option><option value="2">2 高</option><option value="3">3 普通</option></select></div>' +
+        '<div class="frow"><label>客户</label><input id="pi-cust" value="插单客户"></div>' +
+        '<button class="btn" id="pi-go">确认插单并重排</button> <button class="btn ghost" onclick="closeModal()">取消</button>' +
+        '<div id="pi-out" style="margin-top:10px"></div>');
+      document.getElementById('pi-go').onclick = function () {
+        POST('/api/plan/push-in', {
+          product: document.getElementById('pi-prod').value,
+          qty: +document.getElementById('pi-qty').value,
+          due_date: document.getElementById('pi-due').value,
+          priority: +document.getElementById('pi-prio').value,
+          customer: document.getElementById('pi-cust').value
+        }).then(function (j) {
+          var d = j.data;
+          document.getElementById('pi-out').innerHTML =
+            '<div class="tag ok">插单成功</div> ' + esc(d.so) + ' → ' + esc(d.wo) +
+            '，预计完工 <b>' + esc(d.end) + '</b>；重排后迟交 ' + d.late_count + ' 张（' + esc(d.late_wos.join(', ')) + '）';
+        }).catch(function (e) { toast(e.message || '插单失败', true); });
+      };
+    });
+  }
+};
+
+/* ---------------- 销售订单 ---------------- */
+PAGES.orders = function (main) {
+  return GET('/api/sales-orders').then(function (j) {
+    main.innerHTML = '<h2 class="page">销售订单</h2><div class="toolbar">' +
+      (perm('so.write') ? '<button class="btn" id="btn-new">＋ 新增订单</button>' +
+      '<button class="btn ghost" id="btn-rel">订单转工单</button>' : '') + '</div>' +
+      table(['订单号', '客户', '产品', '数量', '交期', '优先级', '状态', ''], j.data,
+        function (o) {
+          return '<tr><td>' + esc(o.no) + '</td><td>' + esc(o.customer) + '</td><td>' + esc(o.product) +
+            '</td><td>' + o.qty + '</td><td>' + esc(o.due_date) + '</td><td>' + o.priority + '</td><td>' +
+            '<span class="tag ' + (o.status === '待排产' ? 'warn' : 'info') + '">' + esc(o.status) + '</span></td>' +
+            '<td>' + (perm('so.write') ? '<button class="btn ghost sm" onclick="editSO(\'' + esc(o.no) + '\')">编辑</button>' : '') + '</td></tr>';
+        });
+    var nb = document.getElementById('btn-new');
+    if (nb) nb.onclick = function () { editSO(null); };
+    var rel = document.getElementById('btn-rel');
+    if (rel) rel.onclick = function () {
+      POST('/api/sales-orders/release').then(function (j) {
+        toast('已生成 ' + j.data.count + ' 张工单'); go('orders');
+      });
+    };
+    window._soProducts = null;
+  });
+};
+window.editSO = function (no) {
+  var ps = null;
+  GET('/api/products').then(function (j) {
+    ps = j.data;
+    var p = no ? null : null;
+    var pr = ps.map(function (x) {
+      return '<option value="' + esc(x.code) + '">' + esc(x.code) + ' ' + esc(x.name) + '</option>';
+    }).join('');
+    GET('/api/sales-orders').then(function (j2) {
+      var o = no ? j2.data.find(function (x) { return x.no === no; }) : {};
+      modal('<h3>' + (no ? '编辑订单 ' + esc(no) : '新增销售订单') + '</h3>' +
+        '<div class="frow"><label>客户</label><input id="f-cust" value="' + esc(o.customer || '') + '"></div>' +
+        '<div class="frow"><label>产品</label><select id="f-prod">' + pr + '</select></div>' +
+        '<div class="frow"><label>数量</label><input id="f-qty" type="number" value="' + (o.qty || 1) + '"></div>' +
+        '<div class="frow"><label>交期</label><input id="f-due" type="date" value="' + (o.due_date || new Date(Date.now() + 10 * 86400000).toISOString().slice(0, 10)) + '"></div>' +
+        '<div class="frow"><label>优先级</label><select id="f-prio"><option value="1">1 紧急</option><option value="2">2 高</option><option value="3" selected>3 普通</option></select></div>' +
+        '<button class="btn" id="f-save">保存</button> <button class="btn ghost" onclick="closeModal()">取消</button>');
+      if (o) document.getElementById('f-prod').value = o.product;
+      if (o) document.getElementById('f-prio').value = o.priority;
+      document.getElementById('f-save').onclick = function () {
+        POST('/api/sales-orders/save', {
+          no: no || undefined,
+          customer: document.getElementById('f-cust').value,
+          product: document.getElementById('f-prod').value,
+          qty: +document.getElementById('f-qty').value,
+          due_date: document.getElementById('f-due').value,
+          priority: +document.getElementById('f-prio').value
+        }).then(function () { closeModal(); toast('已保存'); go('orders'); })
+          .catch(function (e) { toast(e.message || '保存失败', true); });
+      };
+    });
+  });
+};
+
+/* ---------------- 工单 ---------------- */
+PAGES.wos = function (main) {
+  return GET('/api/work-orders').then(function (j) {
+    main.innerHTML = '<h2 class="page">生产工单</h2>' +
+      table(['工单号', '关联订单', '产品', '数量', '交期', '优先级', '状态', '下达日'], j.data,
+        function (w) {
+          return '<tr><td>' + esc(w.no) + '</td><td>' + esc(w.so || '—') + '</td><td>' + esc(w.product) +
+            '</td><td>' + w.qty + '</td><td>' + esc(w.due_date) + '</td><td>' + w.priority + '</td><td>' +
+            '<span class="tag ' + (w.status === '排程失败' ? 'err' : (w.status === '排产中' ? 'ok' : 'info')) + '">' +
+            esc(w.status) + '</span></td><td>' + esc(fmtDate(w.release_date)) + '</td></tr>';
+        });
+  });
+};
+
+/* ---------------- 齐套 ---------------- */
+PAGES.kit = function (main) {
+  main.innerHTML = '<h2 class="page">物料齐套检查</h2>' +
+    '<div style="color:var(--sub);font-size:12.5px;margin-bottom:10px">' +
+    '按排程顺序模拟发料（先排先领）：逐单核对 BOM 需求量与现有库存，' +
+    '缺料工单会被标记为阻塞，缺料不预扣库存以免虚假齐套。</div><div class="toolbar">' +
+    '<button class="btn" id="btn-kit">▶ 执行齐套检查</button></div><div id="kit-body">' +
+    '<div class="empty">点击按钮按当前排程顺序模拟发料</div></div>';
+  document.getElementById('btn-kit').onclick = function () {
+    document.getElementById('kit-body').innerHTML = '<div class="empty">计算中…</div>';
+    POST('/api/kit/run').then(function (j) {
+      var d = j.data;
+      document.getElementById('kit-body').innerHTML =
+        '<div class="kpis">' + kpi(d.ok_count, '齐套工单', 'ok') + kpi(d.block_count, '缺料阻塞', d.block_count ? 'err' : '') +
+        kpi(Object.keys(d.stock_after).length, '物料品种') + '</div>' +
+        '<div class="card"><h3>检查明细（批次 ' + esc(d.check_no) + '）</h3>' +
+        table(['工单', '产品', '齐套', '缺口明细'], d.rows, function (r) {
+          return '<tr><td>' + esc(r.wo) + '</td><td>' + esc(r.product) + '</td><td>' +
+            (r.kit_ok ? '<span class="tag ok">齐套</span>' : '<span class="tag err">缺口 ' + r.shortage.length + '</span>') +
+            '</td><td style="white-space:normal">' + esc(r.shortage.map(function (s) {
+              return s.material + ' 需' + s.need + ' 存' + s.stock + ' 缺' + s.gap;
+            }).join('；') || '—') + '</td></tr>';
+        }) + '</div>' +
+        '<div class="card"><h3>缺口汇总</h3>' +
+        (d.shortage.length ? table(['物料', '总缺口', '阻塞工单'], d.shortage, function (s) {
+          return '<tr><td>' + esc(s.material) + '</td><td>' + s.total_gap + '</td><td>' + esc(s.block_wos.join(', ')) + '</td></tr>';
+        }) : '<div class="empty">无缺口 🎉</div>') + '</div>';
+    }).catch(function (e) { toast(e.message || '检查失败', true); });
+  };
+};
+
+/* ---------------- CTP ---------------- */
+PAGES.ctp = function (main) {
+  main.innerHTML = '<h2 class="page">交期承诺 CTP</h2>' +
+    '<div class="card"><h3>模拟一条新订单，回答"这单能不能接、最早什么时候交"</h3>' +
+    '<div class="toolbar"><select id="c-prod"></select>' +
+    '<input id="c-qty" type="number" value="2" min="1" style="width:90px">' +
+    '<input id="c-due" type="date" value="' + new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10) + '">' +
+    '<button class="btn" id="c-go">查询可承诺</button></div>' +
+    '<div id="c-out"></div></div>' +
+    '<div class="card"><h3>历史查询</h3><div id="c-his"><div class="empty">加载中…</div></div></div>';
+  GET('/api/products').then(function (j) {
+    document.getElementById('c-prod').innerHTML = j.data.map(function (p) {
+      return '<option value="' + esc(p.code) + '">' + esc(p.code) + ' ' + esc(p.name) + '</option>';
+    }).join('');
+  });
+  document.getElementById('c-go').onclick = function () {
+    POST('/api/ctp', {product: document.getElementById('c-prod').value,
+      qty: +document.getElementById('c-qty').value,
+      due_date: document.getElementById('c-due').value}).then(function (j) {
+      var d = j.data;
+      document.getElementById('c-out').innerHTML =
+        '<div class="tag ' + (d.on_time ? 'ok' : (d.feasible ? 'warn' : 'err')) + '">' +
+        (d.on_time ? '可按期承诺' : (d.feasible ? '需协商' : '无法排入')) + '</div> ' + esc(d.suggestion) +
+        '<div style="margin-top:8px;font-size:12px;color:var(--sub)">最早完工 ' + esc(d.earliest_end || '—') +
+        ' ｜ 要求交期 ' + esc(d.requested_due) + ' ｜ 队列 ' + d.queue_len + ' 工单</div>';
+      loadHis();
+    }).catch(function (e) { toast(e.message || '查询失败', true); });
+  };
+  loadHis();
+  function loadHis() {
+    GET('/api/ctp/history').then(function (j) {
+      document.getElementById('c-his').innerHTML = table(
+        ['时间', '产品', '数量', '要求交期', '最早完工', '按期', '查询人'], j.data, function (r) {
+          return '<tr><td>' + esc(r.queried_at) + '</td><td>' + esc(r.product) + '</td><td>' + r.qty +
+            '</td><td>' + esc(r.due_date) + '</td><td>' + esc(r.answer_end || '—') + '</td><td>' +
+            (r.on_time ? '<span class="tag ok">是</span>' : '<span class="tag err">否</span>') + '</td><td>' +
+            esc(r.queried_by) + '</td></tr>';
+        });
+    });
+  }
+};
+
+/* ---------------- 主数据 ---------------- */
+PAGES.master = function (main) {
+  main.innerHTML = '<h2 class="page">主数据</h2><div class="toolbar">' +
+    ['wc', 'mat', 'prod', 'bom', 'rt'].map(function (t, i) {
+      return '<button class="btn ghost sm tab" data-t="' + t + '"' + (i === 0 ? ' style="background:var(--pri);color:#fff"' : '') + '>' +
+        ['工作中心', '物料', '产品/BOM', '工艺路线', '库存调整'][i] + '</button>';
+    }).join('') + '</div><div id="m-body"></div>';
+  document.querySelectorAll('.tab').forEach(function (b) {
+    b.onclick = function () {
+      document.querySelectorAll('.tab').forEach(function (x) { x.style.cssText = ''; });
+      b.style.cssText = 'background:var(--pri);color:#fff';
+      draw(b.getAttribute('data-t'));
+    };
+  });
+  draw('wc');
+  function draw(t) {
+    var el = document.getElementById('m-body');
+    el.innerHTML = '<div class="empty">加载中…</div>';
+    if (t === 'wc') GET('/api/workcenters').then(function (j) {
+      el.innerHTML = table(['编码', '名称', '类型', '日产能(h)', '效率', '工作日', '班次', '成本率', '状态'], j.data,
+        function (w) {
+          return '<tr><td>' + esc(w.code) + '</td><td>' + esc(w.name) + '</td><td>' + esc(w.wtype) +
+            '</td><td>' + w.hours_per_day + '</td><td>' + w.efficiency + '</td><td>' + esc(w.work_days) +
+            '</td><td>' + esc(w.shift) + '</td><td>' + w.cost_rate + '</td><td>' +
+            '<span class="tag ' + (w.status === '运行' ? 'ok' : 'warn') + '">' + esc(w.status) + '</span></td></tr>';
+        });
+    });
+    else if (t === 'mat') GET('/api/materials').then(function (j) {
+      el.innerHTML = table(['编码', '名称', '单位', '库存', '安全库存', '采购周期(天)', '单价', '供应商'], j.data,
+        function (m) {
+          return '<tr><td>' + esc(m.code) + '</td><td>' + esc(m.name) + '</td><td>' + esc(m.unit) +
+            '</td><td>' + m.stock + '</td><td>' + m.safety + '</td><td>' + m.lead_days + '</td><td>' +
+            m.price + '</td><td>' + esc(m.supplier) + '</td></tr>';
+        });
+    });
+    else if (t === 'prod') Promise.all([GET('/api/products'), GET('/api/bom')]).then(function (rs) {
+      var boms = rs[1].data;
+      el.innerHTML = '<div class="card"><h3>产品</h3>' + table(['编码', '名称', '单位', '类别', '标准价'], rs[0].data,
+        function (p) { return '<tr><td>' + esc(p.code) + '</td><td>' + esc(p.name) + '</td><td>' + esc(p.unit) +
+          '</td><td>' + esc(p.category) + '</td><td>' + p.std_price + '</td></tr>'; }) + '</div>' +
+        '<div class="card"><h3>BOM</h3>' + table(['产品', '物料', '单件用量', '损耗%'], boms,
+          function (b) { return '<tr><td>' + esc(b.product) + '</td><td>' + esc(b.material) + ' ' + esc(b.mat_name || '') +
+            '</td><td>' + b.qty_per_unit + '</td><td>' + b.loss_pct + '</td></tr>'; }) + '</div>';
+    });
+    else if (t === 'rt') GET('/api/routings').then(function (j) {
+      el.innerHTML = table(['产品', '工序号', '工作中心', '工序名', '准备(h)', '单件(h)', '转移(h)'], j.data,
+        function (r) { return '<tr><td>' + esc(r.product) + '</td><td>' + r.seq + '</td><td>' + esc(r.wc) + ' ' +
+          esc(r.wc_name || '') + '</td><td>' + esc(r.op_name) + '</td><td>' + r.setup_h + '</td><td>' +
+          r.run_h_per_unit + '</td><td>' + r.transfer_h + '</td></tr>'; });
+    });
+    else if (t === 'inv') {
+      el.innerHTML = '<div class="card"><h3>库存调整</h3>' +
+        '<div class="toolbar"><input id="adj-code" placeholder="物料编码 如 M-STEEL" style="width:200px">' +
+        '<input id="adj-delta" type="number" value="10" style="width:100px">' +
+        '<button class="btn" id="adj-go">调整</button></div><div id="adj-out"></div></div>';
+      document.getElementById('adj-go').onclick = function () {
+        POST('/api/materials/adjust', {code: document.getElementById('adj-code').value.trim(),
+          delta: +document.getElementById('adj-delta').value}).then(function (j) {
+          document.getElementById('adj-out').innerHTML = '<span class="tag ok">已调整，现库存 ' + j.data.stock + '</span>';
+        }).catch(function (e) { toast(e.message || '失败', true); });
+      };
+    }
+  }
+};
+
+/* ---------------- 告警 ---------------- */
+PAGES.alerts = function (main) {
+  return GET('/api/alerts').then(function (j) {
+    var list = j.data || [];
+    main.innerHTML = '<h2 class="page">告警中心</h2>' +
+      '<div style="color:var(--sub);font-size:12.5px;margin-bottom:10px">' +
+      '排程自动产出四类告警：工单迟交（ORDER_LATE）、交期临近（ORDER_NEAR）、' +
+      '工作中心超载/繁忙（WC_OVER/WC_BUSY）、物料缺口（MAT_SHORT）。处理后可归档。</div>' +
+      table(['编号', '级别', '类型', '对象', '消息', '状态', '时间', ''], list, function (a) {
+        return '<tr><td>' + esc(a.no) + '</td><td><span class="tag ' +
+          (a.level === 'high' ? 'err' : (a.level === 'mid' ? 'warn' : 'info')) + '">' + esc(a.level) +
+          '</span></td><td>' + esc(a.atype) + '</td><td>' + esc(a.target) + '</td>' +
+          '<td style="white-space:normal;max-width:380px">' + esc(a.message) + '</td><td>' +
+          (a.status === '已处理' ? '<span class="tag ok">已处理</span>' : '<span class="tag warn">未处理</span>') +
+          '</td><td>' + esc(a.created_at) + '</td><td>' +
+          (a.status === '未处理' ? '<button class="btn sm" onclick="handleAlert(\'' + esc(a.no) + '\')">处理</button>' : '') +
+          '</td></tr>';
+      });
+    window.handleAlert = function (no) {
+      POST('/api/alerts/' + no + '/handle').then(function () { toast('已处理'); go('alerts'); })
+        .catch(function (e) { toast(e.message || '失败', true); });
+    };
+  });
+};
+
+/* ---------------- 系统管理 ---------------- */
+PAGES.system = function (main) {
+  Promise.all([GET('/api/users'), GET('/api/roles'), GET('/api/rules'), GET('/api/logs'),
+               GET('/api/api-keys')]).then(function (rs) {
+    var users = rs[0].data, roles = rs[1].data, rulesObj = rs[2].data, logs = rs[3].data, keys = rs[4].data;
+    main.innerHTML = '<h2 class="page">系统管理</h2>' +
+      '<div class="card"><h3>业务规则</h3><div id="rules-box"></div></div>' +
+      '<div class="card"><h3>用户与角色</h3>' +
+      table(['用户名', '姓名', '角色', '电话', '状态'], users, function (x) {
+        return '<tr><td>' + esc(x.username) + '</td><td>' + esc(x.name) + '</td><td>' + esc(x.role) +
+          '</td><td>' + esc(x.phone) + '</td><td>' + esc(x.status) + '</td></tr>';
+      }) + '<div style="margin-top:10px">' + roles.map(function (r) {
+        return '<div style="font-size:12px;margin-bottom:4px"><b>' + esc(r.label) + '（' + esc(r.role) + '）</b>：' +
+          esc(r.perms.join(', ')) + '</div>';
+      }).join('') + '</div></div>' +
+      '<div class="card"><h3>API 密钥（外部系统对接）</h3>' +
+      (perm('system.write') ? '<div class="toolbar"><input id="ak-name" placeholder="密钥名称，如 MES 对接" style="width:200px">' +
+      '<select id="ak-role"><option value="reader">reader</option><option value="planner">planner</option><option value="sales">sales</option></select>' +
+      '<button class="btn" id="ak-go">创建</button></div><div id="ak-out"></div>' : '') +
+      table(['ID', '名称', '前缀', '角色', '状态', '最近使用'], keys, function (k) {
+        return '<tr><td>' + k.id + '</td><td>' + esc(k.name) + '</td><td>' + esc(k.key_prefix) + '</td><td>' +
+          esc(k.role) + '</td><td>' + esc(k.status) + '</td><td>' + esc(k.last_used || '—') + '</td></tr>';
+      }) + '</div>' +
+      '<div class="card"><h3>审计日志（最近 200 条）</h3>' +
+      table(['用户', '动作', '详情', '时间'], logs, function (l) {
+        return '<tr><td>' + esc(l.username) + '</td><td>' + esc(l.action) + '</td><td>' + esc(l.detail) +
+          '</td><td>' + esc(l.at) + '</td></tr>';
+      }) + '</div>';
+    var rb = document.getElementById('rules-box');
+    rb.innerHTML = Object.keys(rulesObj).map(function (k) {
+      return '<div class="frow" style="max-width:460px"><label>' + esc(k) + '</label>' +
+        '<input value="' + esc(rulesObj[k]) + '" data-k="' + esc(k) + '"></div>';
+    }).join('') + '<button class="btn" id="rules-save">保存规则</button>';
+    document.getElementById('rules-save').onclick = function () {
+      var obj = {};
+      rb.querySelectorAll('input[data-k]').forEach(function (i) { obj[i.getAttribute('data-k')] = i.value; });
+      POST('/api/rules/save', {rules: obj}).then(function () { toast('规则已保存，下次排程生效'); })
+        .catch(function (e) { toast(e.message || '失败', true); });
+    };
+    var ak = document.getElementById('ak-go');
+    if (ak) ak.onclick = function () {
+      POST('/api/api-keys/create', {name: document.getElementById('ak-name').value,
+        role: document.getElementById('ak-role').value}).then(function (j) {
+        document.getElementById('ak-out').innerHTML = '<div class="tag warn">仅显示一次</div> <code>' +
+          esc(j.data.key) + '</code>';
+      }).catch(function (e) { toast(e.message || '失败', true); });
+    };
+  });
+};
+
+</script>
+<script>boot();</script>
+</body>
+</html>
