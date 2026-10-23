@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+backend/*.db
+backend/*.db-wal
+backend/*.db-shm
+demo/_demo.db*
+demo/*.zip
+reports/
+*.log
